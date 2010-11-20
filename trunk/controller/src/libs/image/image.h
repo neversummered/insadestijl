@@ -8,7 +8,7 @@
 #ifndef IMAGE_H_
 #define IMAGE_H_
 
-#include "/home/pehladik/Projects/IP_test/IP_test/communication/message.h"
+#include "../communication/message.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#include <jpeglib.h>
+//#include <jpeglib.h>
 
 #include <opencv/highgui.h>
 #include <opencv/cv.h>

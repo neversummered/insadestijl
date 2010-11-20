@@ -19,14 +19,6 @@
 int Open_Server(int port);
 
 /**
- * send message through a connected socket
- * @param connectSocket id of the socket
- * @param pData data to send
- * @param len size of the data in byte
- */
-void Send_Message(int connectSocket, char * pData, int len);
-
-/**
  * close a socket
  * @param connectSocket id of the socket
  */
