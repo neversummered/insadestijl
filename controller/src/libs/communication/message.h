@@ -4,20 +4,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/socket.h>
 
 // déclaration des identificateurs des types de données
 // entier 16 bits
 #define TYPE_ENTIER  'I'
-// reel simple précision sur 4 octets          
-#define TYPE_REEL  'R' 
+// reel simple précision sur 4 octets
+#define TYPE_REEL  'R'
 // tableau d entiers codés sur  16 bits
 #define TYPE_TABLEAU_ENTIERS  'A'
 // tableau de réels simple précision
-#define TYPE_TABLEAU_REELS 'T'    
+#define TYPE_TABLEAU_REELS 'T'
 // caractère 1 octet
-#define TYPE_CAR  'C'             
+#define TYPE_CAR  'C'
 // chaine de caractères
-#define TYPE_CHAINE  'S'          
+#define TYPE_CHAINE  'S'
 
 struct message
 {
@@ -38,5 +39,15 @@ void Print (MESSAGE * pMsg, int MaxSize);
 void Put_Int (MESSAGE * pMsg, int value);
 void Put_Char (MESSAGE * pMsg, char c);
 void Put_String (MESSAGE * pMsg, const char * str) ;
+int Read_Message(MESSAGE * pMsg, int idSocket);
+/**
+ * send message through a connected socket
+ * @param connectSocket id of the socket
+ * @param pData data to send
+ * @param len size of the data in byte
+ */
+void Send_Message(int connectSocket, char * pData, int len);
+
+int ByteArray_To_Int(char buf[4]);
 
 #endif

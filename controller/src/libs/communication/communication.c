@@ -12,7 +12,7 @@ int sd;
 
 	if ((sd = socket (AF_INET, SOCK_STREAM, 0)) < 0)
 	{
-		printf ("Erreur à l'ouverture du socket\n");
+		printf ("Erreur a l'ouverture du socket\n");
 		return (-1);
 	}
 
@@ -53,19 +53,12 @@ int sd;
 	}
 	close(sd);
 
+	printf ("Socket %d ouverte \n",connectSocket);
+
 	return connectSocket;
 }
 
 void Close_Server(int connectSocket) {
 	close(connectSocket);
-}
-
-void Send_Message(int connectSocket, char * pData, int len) {
-	int iResult;
-	iResult = send( connectSocket, pData, len, 0 );
-	if (iResult < 0) {
-		perror("send() failed with error: \n");
-	} else {
-		printf("iresul: %d \n",iResult);
-	}
+	printf("Server closed\n");
 }
