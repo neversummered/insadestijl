@@ -1,26 +1,26 @@
 #include "findPosition.h"
 #include "show.h"
 #include "stopwatch.h"
-#include "calibration.h"
 #include <math.h>
+#include <stdio.h>
 
 CvPoint2D32f position;
 CvPoint2D32f orientation;
 
-IplImage *imgSrc;
-IplImage *imgResized;
-IplImage *imgBinarized;
-IplImage *roiBinarized;
+IplImage *imgSrc = NULL;
+IplImage *imgResized = NULL;
+IplImage *imgBinarized = NULL;
+IplImage *roiBinarized = NULL;
 
 CvRect roi;
 
 CvPoint2D32f spots[3];
 
 /* Parameters */
-int imageFactor = 1;
-int filterThreshold = 200;
-int nbIterErode = 0;
-int nbIterDilate = 0;
+int imageFactor = 3;
+int filterThreshold = 160;
+int nbIterErode = 2;
+int nbIterDilate = 2;
 
 
 /* Valeurs pour distinguer le robot des autres éléments */
@@ -34,11 +34,13 @@ void computeRobotPosition(IplImage *image) {
     hardFilter();
     findROI();
     applyROI();
+    //showImage(imgSrc, "roi", false);
     filterROI();
     findPositionPoints();
     position = computeTriangleMasscenter(spots);
     orientation = computeOrientation(spots);
     freeROI();
+    releaseImage();
 }
 
 void test(char *fileName) {
@@ -72,6 +74,13 @@ void test(char *fileName) {
 
 void loadSrcImage(char *fileName) {
     imgSrc = cvLoadImage(fileName);
+}
+
+void releaseImage(){
+    cvReleaseImage(&imgSrc);
+    cvReleaseImage(&imgResized);
+	cvReleaseImage(&imgBinarized);
+	cvReleaseImage(&roiBinarized);
 }
 
 void resizeWithFactor() {
@@ -110,10 +119,12 @@ void hardFilter() {
 
     //Morphology
     // Morphological opening (inverse because we have white pixels on black background)
-    if (nbIterDilate != 0)
+    if (nbIterDilate != 0) {
         cvDilate(imgBinarized, imgBinarized, kernel, nbIterDilate);
-    if (nbIterErode != 0)
+    }
+    if (nbIterErode != 0){
         cvErode(imgBinarized, imgBinarized, kernel, nbIterErode);
+    }
 }
 
 void findROI() {
@@ -125,16 +136,18 @@ void findROI() {
     // create memory storage that will contain all the dynamic data
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq* contours;
-    CvBox2D *pBox;
+    CvBox2D pBox;
 
     cvFindContours(imgBinarized, storage, &contours, sizeof (CvContour),
             CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
+	//showContours(imgBinarized, contours, false);
+	
     /* recherche de la forme la plus proche du robot */
     for (; contours != 0; contours = contours->h_next) {
-        *pBox = cvMinAreaRect2(contours);
-        h = pBox->size.height;
-        w = pBox->size.width;
+	    pBox = cvMinAreaRect2(contours);
+        h = pBox.size.height;
+        w = pBox.size.width;
         if ((h != 0) && (w != 0)) {
             if (h > w) {
                 tmp = h;
@@ -192,7 +205,7 @@ void findPositionPoints() {
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq *contour;
     CvSeq *c;
-    CvRect *pRect;
+    CvRect pRect;
     CvPoint pt;
     int cmpt = 0;
 
@@ -204,8 +217,8 @@ void findPositionPoints() {
             c = contour->v_next;
             for (; c != 0; c = c->h_next) {
                 //Trouver le rect du contour
-                *pRect = cvBoundingRect(c, 1);
-                spots[cmpt] = computeMassCenter(c, pRect);
+                pRect = cvBoundingRect(c, 1);
+                spots[cmpt] = computeMassCenter(c, &pRect);
                 cmpt++;
             }
         }
@@ -283,6 +296,21 @@ void freeROI() {
     position.y += roi.y;
 }
 
+void drawPositonAndOrientation(IplImage *img){
+	/* Compute the magnitude of the orientation vector */
+    float norm = sqrt(pow(orientation.x, 2) + pow(orientation.y, 2));
+    
+    /* orientation unit vector */
+    CvPoint2D32f zou = cvPoint2D32f(position.x + 20 * (orientation.x / norm),
+            position.y + 20 * (orientation.y / norm));
+            
+   	CvPoint pt1 = cvpoint2d32fTocvpoint(position);
+    CvPoint pt2 = cvpoint2d32fTocvpoint(zou);
+    
+    CvScalar color = CV_RGB(0, 255, 0);
+    cvLine(img, pt1, pt2, color, 1, CV_AA, 0);
+}
+
 CvPoint2D32f getPosition(){
     return position;
 }
@@ -291,6 +319,23 @@ CvPoint2D32f getOrientation(){
     return orientation;
 }
 
+IplImage *getImgResized(){
+	return imgResized;
+}
+
+IplImage *getImgBinarized(){
+	return imgBinarized;
+}
+
+IplImage *getImgSource(){
+	return imgSrc;
+}
+
 void setImagefactor(int factor) {
     imageFactor = factor;
+}
+
+
+void setImgSource(IplImage *image){
+	imgSrc = image;
 }

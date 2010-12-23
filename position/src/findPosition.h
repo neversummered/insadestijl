@@ -62,11 +62,19 @@ void freeROI();
 /* Compute the mass center of a contour in space delimited by a rectangular */
 CvPoint2D32f computeMassCenter(CvSeq *c, CvRect *r) ;
 
+void drawPositonAndOrientation(IplImage *img);
+
+void releaseImage();
+
 /* Getters and setters */
 void setImagefactor(int factor);
+void setImgSource(IplImage *image);
+
 CvPoint2D32f getPosition();
 CvPoint2D32f getOrientation();
-
+IplImage *getImgResized();
+IplImage *getImgBinarized();
+IplImage *getImgSource();
 
 #endif	/* FINDPOSITION_H */
 

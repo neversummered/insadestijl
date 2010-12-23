@@ -1,4 +1,5 @@
 #include "show.h"
+#include <stdio.h>
 
 void showImage(IplImage *image, char *name, bool wait) {
     cvNamedWindow(name, CV_WINDOW_AUTOSIZE);

@@ -9,7 +9,6 @@
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
-#include "calibration.h"
 #include "findPosition.h"
 #include "show.h"
 
