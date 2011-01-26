@@ -7,6 +7,7 @@
  *
  */
 #include "analyseimage.h"
+#include "../video/imageShop.h"
 
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
@@ -36,6 +37,8 @@ namespace robotInsa {
     int robotWidthReference = 46;
     float robotFactorReference = 1.2;
 
+    
+
     Position AnalyseImage::computeRobotPosition(IplImage *image) {
         imgSrc = cvCloneImage(image);
         resizeWithFactor();
@@ -50,6 +53,28 @@ namespace robotInsa {
 
         Position pos(tmpVecPosition.x, tmpVecPosition.y, polarConversion(tmpVecOrientation));
         return pos;
+    }
+
+    CvBox2D AnalyseImage::computeAreaPosition(IplImage* image) {
+        imgSrc = cvCloneImage(image);
+        resizeWithFactor();
+        filterThreshold = 230;
+        nbIterErode = 2;
+        nbIterDilate = 2;
+        hardFilter();
+
+        CvBox2D box = {
+            {0, 0},
+            {0, 0}, 0};
+        CvPoint2D32f pt = cvPoint2D32f((double) imgBinarized->width / 2, (double) imgBinarized->height / 2);
+        findShapeAreaAroundPoint(pt, &box);
+
+        box.center.x = box.center.x*imageFactor;
+        box.center.y = box.center.y*imageFactor;
+        box.size.height = box.size.height*imageFactor;
+        box.size.width = box.size.width*imageFactor;
+
+        return box;
     }
 
     void AnalyseImage::loadSrcImage(char *fileName) {
@@ -279,5 +304,34 @@ namespace robotInsa {
             orientation = 3 * M_PI / 2;
         }
         return orientation;
+    }
+
+    void AnalyseImage::findShapeAreaAroundPoint(CvPoint2D32f pt, CvBox2D *pBox) {
+        // create memory storage that will contain all the dynamic data
+        CvMemStorage* storage = cvCreateMemStorage(0);
+        CvSeq* contours;
+        CvSeq *c;
+        //CvPoint2D32f pt = cvPoint2D32f((double)img_bin->width/2, (double)img_bin->height/2);
+
+        cvFindContours(imgBinarized, storage, &contours, sizeof (CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+
+        c = contours;
+        int isInside = -1;
+
+        while ((c != NULL) && (isInside < 0)) {
+            printf("isInside:%d\n", isInside);
+            isInside = cvPointPolygonTest(c, pt, 0);
+            printf("isInside:%d\n", isInside);
+            if (isInside < 0)
+                c = c->h_next;
+        }
+        if (c != NULL) {
+            *pBox = cvMinAreaRect2(c);
+            //*pRect = cvBoundingRect(c, 1);
+        } else {
+            pBox = NULL;
+        }
+
+        cvReleaseMemStorage(&storage);
     }
 }

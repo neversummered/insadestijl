@@ -49,6 +49,8 @@ namespace robotInsa {
             return data;
         }
 
+        void print(int maxChar);
+
     private:
         char dataType;
         int len;

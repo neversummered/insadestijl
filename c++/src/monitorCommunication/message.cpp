@@ -1,14 +1,19 @@
 #include "message.h"
 #include "../video/jpegimage.h"
+#include "../tools/toolsconvert.h"
 
 
 namespace robotInsa {
 
-    void int2ByteArray(int i, char* b){
-        *b = i >> 24;
-        *(b+1) = i >> 16;
-        *(b+2) = i >> 8;
-        *(b+3) = i;
+    void Message::print(int maxChar){
+        int i;
+        if (maxChar > len)
+            maxChar = len;
+        
+        for (i = 0; i < maxChar ; i++ ){
+            printf("%d ", (int)data[i]) ;
+        }
+        printf("\n");
     }
 
     void Message::setMessage(char type, int datalen, char *d) {
@@ -97,19 +102,15 @@ namespace robotInsa {
      }
 
      void Message::setPosition(Position p){
-         /*int len = 3*sizeof(float);
-         char data[3*sizeof(float)];
-
-         float tmp = p.getX();
-         memcpy(&data[0], &tmp , sizeof(float));
-         tmp = p.getY();
-         memcpy(&data[sizeof(float)], &tmp , sizeof(float));
-         tmp = p.getOrientation();
-         memcpy(&data[2*sizeof(float)], &tmp , sizeof(float));*/
-
-         char data[3];
-
-         //setMessage('P', len, data);
+         int datalen = 3*sizeof(int);
+         char data[3*sizeof(int)];
+         
+         int tmp;
+         int2ByteArray((int)p.getX(), &data[0]);
+         int2ByteArray((int)p.getY(), &data[sizeof(int)]);
+         int2ByteArray((int)(p.getOrientation()*360.0/(2*M_PI)), &data[2*sizeof(int)]);
+         
+         setMessage('P', datalen, data);
      }
     
 }
