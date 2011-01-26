@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="69">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true"
+                   kind="SOURCE_LOGICAL_FOLDER">
+      <logicalFolder name="f5"
+                     displayName="analyseImage"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/imageAnalyser/analyseimage.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f3"
+                     displayName="communicationMonitor"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/monitorCommunication/message.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/monitorCommunication/server.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f2"
+                     displayName="communicationRobot"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/robotCommunication/communicationrobot.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f4"
+                     displayName="data"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/data/action.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/data/ordremouvement.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/data/position.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f6"
+                     displayName="tools"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolsconvert.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolstime.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f1"
+                     displayName="video"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/Image.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/camera.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/imageShop.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/jpegimage.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/myexception.h</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/sourcevideo.h</itemPath>
+      </logicalFolder>
+    </logicalFolder>
+    <logicalFolder name="ResourceFiles"
+                   displayName="Resource Files"
+                   projectFiles="true"
+                   kind="SOURCE_LOGICAL_FOLDER">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true"
+                   kind="SOURCE_LOGICAL_FOLDER">
+      <logicalFolder name="f3"
+                     displayName="analyseImage"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/imageAnalyser/analyseimage.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f5"
+                     displayName="communicationMonitor"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/monitorCommunication/message.cpp</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/monitorCommunication/server.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f4"
+                     displayName="communicationRobot"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/robotCommunication/communicationrobot.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f1"
+                     displayName="tools"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolsconvert.cpp</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolstime.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f2"
+                     displayName="video"
+                     projectFiles="true"
+                     kind="SOURCE_LOGICAL_FOLDER">
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/camera.cpp</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/exception.cpp</itemPath>
+        <itemPath>/Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/imageShop.cpp</itemPath>
+      </logicalFolder>
+      <itemPath>main.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="TestFiles"
+                   displayName="Test Files"
+                   projectFiles="false"
+                   kind="TEST_LOGICAL_FOLDER">
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>4</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+            <linkerOptionItem>-lcv -lcxcore -lhighgui</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>4</platform>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <developmentMode>5</developmentMode>
+        </cTool>
+        <ccTool>
+          <developmentMode>5</developmentMode>
+        </ccTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <asmTool>
+          <developmentMode>5</developmentMode>
+        </asmTool>
+      </compileType>
+    </conf>
+  </confs>
+</configurationDescriptor>
