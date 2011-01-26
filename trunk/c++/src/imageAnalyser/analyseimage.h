@@ -22,7 +22,7 @@ namespace robotInsa {
     class AnalyseImage {
     public:
         Position computeRobotPosition(IplImage *image);
-        Position computeAreaPosition(IplImage *image);
+        CvBox2D computeAreaPosition(IplImage *image);
 
     private:
         /**
@@ -71,6 +71,8 @@ namespace robotInsa {
         CvPoint2D32f computeMassCenter(CvSeq *c, CvRect *r);
 
         float polarConversion(CvPoint2D32f vec);
+
+        void findShapeAreaAroundPoint(CvPoint2D32f pt, CvBox2D *pBox);
 
     };
 }

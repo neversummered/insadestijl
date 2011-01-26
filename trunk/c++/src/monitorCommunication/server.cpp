@@ -156,6 +156,7 @@ namespace robotInsa {
         int retour = 0;
 
         retour = recv(socketID, &type, 1, 0); /* Lecture du type */
+        //printf("retour:%d type:%d\n",retour, (int)type);
         if (retour > 0) {
             retour = recv(socketID, buf, 4, 0);
             if (retour > 0) { /* Lecture de la taille des données*/
@@ -168,7 +169,7 @@ namespace robotInsa {
                 }
             }
         }
-
+        
         return retour;
     }
 
