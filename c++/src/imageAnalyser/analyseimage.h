@@ -16,15 +16,24 @@
 
 #include "../video/Image.h"
 #include "../data/position.h"
+#include "../data/arena.h"
 
 namespace robotInsa {
 
     class AnalyseImage {
     public:
-        Position computeRobotPosition(IplImage *image);
-        CvBox2D computeAreaPosition(IplImage *image);
+
+        AnalyseImage(){
+            arene = NULL;
+        }
+        Position computeRobotPosition(Image img);
+        Arena computeAreaPosition(Image img);
+        void setArena(Arena *a) {
+            arene = a;
+        }
 
     private:
+        Arena *arene;
         /**
          * Load an image
          * @param fileName the name of the source file

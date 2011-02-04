@@ -133,19 +133,24 @@ namespace robotInsa {
     }
 
     int Server::sendMessage(Message* msg) {
-        int iResult;
-
+        int ret;
         if (active) {
-            iResult = send(socketID, msg->getData(), msg->getLenght(), 0);
-            if (iResult < 0) {
-                perror("send() failed with error: \n");
-            } else {
-                printf("Message envoyé \n");
+            size_t nb_sent = 0;
+            while (nb_sent < msg->getLenght()) {
+                int ret = send(socketID,
+                        msg->getData() + nb_sent,
+                        msg->getLenght() - nb_sent,
+                        0);
+
+                if (ret == -1) {
+                    perror("[tcp_client_a::send]");
+                    return ret;
+                }
+
+                nb_sent += ret;
             }
-        } else {
-            iResult = -2;
         }
-        return iResult;
+        return ret;
     }
 
     int Server::receiveMessage(Message &msg) {
@@ -169,7 +174,7 @@ namespace robotInsa {
                 }
             }
         }
-        
+
         return retour;
     }
 

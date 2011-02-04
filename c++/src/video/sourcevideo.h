@@ -10,7 +10,7 @@
 #define SOURCEVIDEO_H
 
 #include <string>
-#include "image.h"
+#include "Image.h"
 
 namespace robotInsa
 {

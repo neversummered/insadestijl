@@ -11,6 +11,10 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <math.h>
+#include <opencv/highgui.h>
+#include <opencv/cv.h>
+
 namespace robotInsa
 {
     void int2ByteArray(int i, char* b) {
@@ -27,6 +31,20 @@ namespace robotInsa
                 +  (int)(*(b+2) << 8)
                 +  (int)(*(b+3));
         return i;
+    }
+
+    CvRect CvBoxtoCvRect(CvBox2D box) {
+        CvRect rec;
+        CvPoint2D32f box_vtx[4];
+        cvBoxPoints(box, box_vtx);
+
+        rec.x = box_vtx[3].x;
+        rec.y = box_vtx[0].y;
+        rec.height = abs(box_vtx[0].y -box_vtx[2].y);
+        rec.width = abs(box_vtx[1].x -box_vtx[3].x);
+                
+
+        return rec;
     }
     
 }
