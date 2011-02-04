@@ -58,10 +58,11 @@ public final class MonitorReceive extends Thread {
                         running = false;                                        /* Si la taille est 0 perte de la comm */
                         break;
                     }
-
                     tmp = new byte[size];
-                    input.read(tmp, 0, size);                                   /* Lecture des données */
 
+                    while(input.available()<size);
+
+                    input.read(tmp, 0, size);                                   /* Lecture des données */
                     if (type == 'V') {                                          /* Données reçues de type video */
                         img = new ImageIcon(tmp).getImage();
                         monitor.show(img);

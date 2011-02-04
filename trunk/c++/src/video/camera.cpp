@@ -63,7 +63,16 @@ namespace robotInsa
     void Camera::getFrame( Image &frame  )
     {
 
-        frame = cvQueryFrame( mCapture );
+        //frame = cvQueryFrame( mCapture );
+
+        int i = 0;
+        while (i < 5)
+        {
+            cvGrabFrame( mCapture );
+            i++;
+        }
+        frame = cvRetrieveFrame(mCapture );
+
         frame.setDate(getTimeMillis());
 
         if( !frame.ipl() )

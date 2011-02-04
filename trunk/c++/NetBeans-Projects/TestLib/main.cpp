@@ -10,10 +10,14 @@
 #include <iomanip>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
+#include <opencv/cvtypes.h>
+
 #include <string>
 
+#include <pthread.h>
+
 #include "../../src/video/myexception.h"
-#include "../../src/video/image.h"
+#include "../../src/video/Image.h"
 #include "../../src/video/jpegimage.h"
 #include "../../src/video/camera.h"
 #include "../../src/imageAnalyser/analyseimage.h"
@@ -22,6 +26,8 @@
 #include "../../src/data/ordremouvement.h"
 #include "../../src/data/action.h"
 #include "../../src/video/imageShop.h"
+#include "../../src/data/arena.h"
+#include "../../src/tools/cvrect32f.h"
 
 //#include "/Users/Piro/Documents/Implementation/DeStijl/archi/video/utils.h"
 using namespace std;
@@ -31,11 +37,14 @@ using namespace robotInsa;
 long long debut_mesure;
 long long fin_mesure;
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+Action act = Action(0);
+
 void testVideo() {
     // On déclare notre pointeur sur SourceVideo
     SourceVideo *src;
 
-    src = new Camera(CV_CAP_QT + 1);
+    src = new Camera(0);
 
 
     // Initialisation du flux vidéo
@@ -89,17 +98,15 @@ void testVideo() {
 
 }
 
-void testArena(){
+void testArena() {
     char *fileName = "/Users/Piro/Documents/Enseignements/robot_INSA/images_test/arene/Photo14.jpg";
 
     IplImage *image = cvLoadImage(fileName);
+
     AnalyseImage a;
-    CvBox2D box = a.computeAreaPosition(image);
-    drawBox(image, box);
-
+    Arena arene = a.computeAreaPosition(image);
+    drawBox(image, arene.getBox());
     showImage(image, "Arena");
-
-
 }
 
 void testPosition() {
@@ -118,11 +125,11 @@ void testPosition() {
 
 }
 
-void testVideoSreveur() {
+void testPosition2() {
     // On déclare notre pointeur sur SourceVideo
     SourceVideo *src;
 
-    src = new Camera(CV_CAP_QT + 1);
+    src = new Camera(0);
 
 
     // Initialisation du flux vidéo
@@ -137,34 +144,129 @@ void testVideoSreveur() {
     // Si tout va bien, on affiche les informations du flux vidéo.
     std::cout << src->getInfos() << std::endl;
 
+    cvNamedWindow("video", CV_WINDOW_AUTOSIZE);
     Image img;
+    src->getFrame(img);
     JpegImage jImg(img);
-    Message msg = Message();
-    Position p = Position(1.0, 1.0, 4.0);
 
-    Server s;
-    s.openServer("9010");
-    int broke = 1;
-    while (broke >= 0) {
-        try {
-            src->getFrame(img);
-            jImg.setJpegImage(img);
-            msg.setJpegImage(&jImg);
-            broke = s.sendMessage(&msg);
-            cout << msg.getLenght() << endl;
-            msg.setPosition(p);
-            broke = s.sendMessage(&msg);
-            cout << "postion sent:" << broke << endl;
+    AnalyseImage a;
+    Position pos = a.computeRobotPosition(img.ipl());
+    std::cout << "x:" << pos.getX() << ", y:" << pos.getY() << ", o:"
+            << pos.getOrientation() << std::endl;
 
-        } catch (MyException &e) {
-            std::cout << "\n" << e.what() << std::endl;
-            break;
-        }
-    }
-    s.closeServer();
+    drawPosition(img.ipl(), pos);
 
-    std::cout << std::endl;
+    showImage(img.ipl(), "Position");
     delete src;
+}
+
+void testVideoSreveur() {
+
+
+    while (1) {
+        // On déclare notre pointeur sur SourceVideo
+        SourceVideo *src;
+        src = new Camera(0);
+        // Initialisation du flux vidéo
+        try {
+            src->open();
+        } catch (MyException &e) {
+            // Si une exception se produit, on l'affiche et on quitte.
+            std::cout << e.what() << std::endl;
+            delete src;
+        }
+
+        // Si tout va bien, on affiche les informations du flux vidéo.
+        std::cout << src->getInfos() << std::endl;
+
+        Image img;
+        JpegImage jImg(img);
+        Message msg = Message();
+        Position p = Position(1.0, 1.0, 4.0);
+
+        Server s;
+        s.openServer("9010");
+        int broke = 1;
+        long long time;
+
+        while (broke >= 0) {
+            try {
+                time = getTimeMillis();
+                src->getFrame(img);
+                jImg.setJpegImage(img);
+                msg.setJpegImage(&jImg);
+                broke = s.sendMessage(&msg);
+                cout << msg.getLenght() << " time:"
+                        << img.getDate() - time << endl;
+                sleep(1);
+                /*msg.setPosition(p);
+                broke = s.sendMessage(&msg);
+                cout << "postion sent:" << broke << endl;*/
+
+            } catch (MyException &e) {
+                std::cout << "end\n" << e.what() << std::endl;
+                //break;
+            }
+        }
+        s.closeServer();
+
+        std::cout << std::endl;
+        delete src;
+    }
+
+}
+
+void testVideoSreveur2() {
+
+    while (1) {
+        Image img;
+        JpegImage jImg(img);
+        Message msg = Message();
+        Position p = Position(1.0, 1.0, 4.0);
+
+        Server s;
+        s.openServer("9010");
+        int broke = 1;
+        long long time;
+        time = getTimeMillis();
+
+        while (broke >= 0) {
+            // On déclare notre pointeur sur SourceVideo
+            SourceVideo *src;
+            src = new Camera(0);
+            // Initialisation du flux vidéo
+            try {
+                src->open();
+            } catch (MyException &e) {
+                // Si une exception se produit, on l'affiche et on quitte.
+                std::cout << e.what() << std::endl;
+                delete src;
+            }
+
+            try {
+                src->getFrame(img);
+                jImg.setJpegImage(img);
+                msg.setJpegImage(&jImg);
+                broke = s.sendMessage(&msg);
+                cout << msg.getLenght() << " time:"
+                        << img.getDate() - time << endl;
+                time = img.getDate();
+                //sleep(1);
+                /*msg.setPosition(p);
+                broke = s.sendMessage(&msg);
+                cout << "postion sent:" << broke << endl;*/
+
+            } catch (MyException &e) {
+                std::cout << "end\n" << e.what() << std::endl;
+                //break;
+            }
+
+            std::cout << std::endl;
+            delete src;
+        }
+        s.closeServer();
+
+    }
 
 }
 
@@ -215,12 +317,216 @@ void testServeur() {
     }
 }
 
+void* thr_f(void * param) {
+    Server *s = (Server *) param;
+    // On déclare notre pointeur sur SourceVideo
+    SourceVideo *src;
+    src = new Camera(0);
+    // Initialisation du flux vidéo
+    try {
+        src->open();
+    } catch (MyException &e) {
+        // Si une exception se produit, on l'affiche et on quitte.
+        std::cout << e.what() << std::endl;
+        delete src;
+    }
+
+    // Si tout va bien, on affiche les informations du flux vidéo.
+    std::cout << src->getInfos() << std::endl;
+    Image img;
+    JpegImage jImg(img);
+    Message msg = Message();
+    Position p = Position(1.0, 1.0, 4.0);
+
+    int broke = 1;
+
+    int status = 0;
+
+    AnalyseImage a;
+    Arena arene;
+    Position pos;
+    int dodo = 0;
+    while (broke >= 0) {
+        try {
+            pthread_mutex_lock(&mutex);
+            status = act.getOrder();
+            pthread_mutex_unlock(&mutex);
+
+            if (status == 0) {
+                src->getFrame(img);
+                jImg.setJpegImage(img);
+                msg.setJpegImage(&jImg);
+                broke = s->sendMessage(&msg);
+                usleep(100000);
+            } else if (status == 1) {
+                src->getFrame(img);
+                arene = a.computeAreaPosition(img);
+                drawArena(img, arene);
+                drawRec(img.ipl(), CvBoxtoCvRect(arene.getBox()));
+                jImg.setJpegImage(img);
+                msg.setJpegImage(&jImg);
+                a.setArena(&arene);
+                broke = s->sendMessage(&msg);
+                act.setOrder(-1);
+            } else if (status == 2) {
+
+                cout << "image" << endl;
+                src->getFrame(img);
+                cout << "position" << endl;
+                pos = a.computeRobotPosition(img);
+                std::cout << "x:" << pos.getX() << ", y:" << pos.getY() << ", o:"
+                        << pos.getOrientation() << std::endl;
+
+                cout << "dessin" << endl;
+
+                drawPosition(img.ipl(), pos);
+                cout << "dessin2" << endl;
+                jImg.setJpegImage(img);
+                msg.setJpegImage(&jImg);
+                broke = s->sendMessage(&msg);
+
+                usleep(100000);
+            }
+            //cout << msg.getLenght() << endl;
+            /*msg.setPosition(p);
+            broke = s.sendMessage(&msg);
+            cout << "postion sent:" << broke << endl;*/
+
+        } catch (MyException &e) {
+            std::cout << "\n" << e.what() << std::endl;
+            break;
+        }
+    }
+}
+
+void testCalibration() {
+    Server s;
+    s.openServer("9010");
+    int broke = 1;
+    pthread_t thr1;
+
+
+    pthread_create(&thr1, NULL, thr_f, &s);
+
+    Message msg = Message();
+
+    while (broke > 0) {
+        broke = s.receiveMessage(msg);
+        //cout << "message reçu {type:" << msg.getType() << "}" << endl;
+
+        if (msg.getType() == 'M') {
+            OrdreMouvement mv = OrdreMouvement(msg);
+            cout << "speed:" << mv.getSpeed()
+                    << " direction:" << mv.getDirection() << endl;
+        } else if (msg.getType() == 'A') {
+            msg.print(10);
+            pthread_mutex_lock(&mutex);
+            act = Action(msg);
+            cout << "action:" << act.getOrder() << endl;
+            pthread_mutex_unlock(&mutex);
+
+        }
+    }
+    s.closeServer();
+}
+
+void testArenaPosition() {
+    SourceVideo *src;
+    src = new Camera(0);
+    // Initialisation du flux vidéo
+    try {
+        src->open();
+    } catch (MyException &e) {
+        // Si une exception se produit, on l'affiche et on quitte.
+        std::cout << e.what() << std::endl;
+        delete src;
+    }
+
+    // Si tout va bien, on affiche les informations du flux vidéo.
+    std::cout << src->getInfos() << std::endl;
+
+    Image img;
+    JpegImage jImg(img);
+    Position p = Position(1.0, 1.0, 4.0);
+    AnalyseImage a;
+    Arena arene;
+    Position pos;
+    /*Premiere image*/
+    src->getFrame(img);
+    arene = a.computeAreaPosition(img);
+    drawArena(img, arene);
+    drawRec(img.ipl(), CvBoxtoCvRect(arene.getBox()));
+    showImage(img.ipl(), "arene");
+    a.setArena(&arene);
+
+    /* Deuxième image*/
+    src->getFrame(img);
+    pos = a.computeRobotPosition(img);
+    drawPosition(img, pos);
+    showImage(img.ipl(), "position");
+}
+
+void testSingleVideo() {
+
+    // On déclare notre pointeur sur SourceVideo
+    SourceVideo *src;
+    src = new Camera(0);
+    // Initialisation du flux vidéo
+    try {
+        src->open();
+    } catch (MyException &e) {
+        // Si une exception se produit, on l'affiche et on quitte.
+        std::cout << e.what() << std::endl;
+        delete src;
+    }
+
+    // Si tout va bien, on affiche les informations du flux vidéo.
+    std::cout << src->getInfos() << std::endl;
+
+    Image img;
+    JpegImage jImg(img);
+    Message msg = Message();
+    Position p = Position(1.0, 1.0, 4.0);
+
+    Server s;
+    s.openServer("9010");
+    int broke = 1;
+    long long time;
+
+    try {
+        time = getTimeMillis();
+        src->getFrame(img);
+        jImg.setJpegImage(img);
+        msg.setJpegImage(&jImg);
+        cout << "size" << msg.getLenght() << endl;
+        broke = s.sendMessage(&msg);
+        cout << "Message envoye (size send:" << broke << endl;
+        showImage(img.ipl(), "stop");
+        /*msg.setPosition(p);
+        broke = s.sendMessage(&msg);
+        cout << "postion sent:" << broke << endl;*/
+
+    } catch (MyException &e) {
+        std::cout << "end\n" << e.what() << std::endl;
+        //break;
+    }
+
+    s.closeServer();
+
+    std::cout << std::endl;
+    delete src;
+
+}
+
 int main(int argc, char* argv[]) {
-     //  testPosition();
-    //   testVideo();
+    // testPosition2();
+    //  testVideo();
     //testServeur();
     //testVideoSreveur();
-    testReceptionOrdre();
+    //testReceptionOrdre();
     //testArena();
+    //testCalibration();
+    //testArenaPosition();
+    testSingleVideo();
     return 0;
 }

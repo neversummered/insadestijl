@@ -8,10 +8,14 @@
  */
 #include "analyseimage.h"
 #include "../video/imageShop.h"
+#include "../data/arena.h"
+#include "../tools/toolsconvert.h"
 
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
+
+#include <stdio.h>
 
 namespace robotInsa {
     CvPoint2D32f tmpVecPosition;
@@ -37,14 +41,31 @@ namespace robotInsa {
     int robotWidthReference = 46;
     float robotFactorReference = 1.2;
 
-    
+    Position AnalyseImage::computeRobotPosition(Image img) {
+        imageFactor = 1;
+        filterThreshold = 230;
+        nbIterErode = 2;
+        nbIterDilate = 3;
+        imgSrc = cvCloneImage(img.ipl());
+        if (arene != NULL) {
+            CvRect rec = CvBoxtoCvRect(arene->getBox());
 
-    Position AnalyseImage::computeRobotPosition(IplImage *image) {
-        imgSrc = cvCloneImage(image);
+            cvSetImageROI(imgSrc, rec);
+            printf("ok\n");
+        }
         resizeWithFactor();
         hardFilter();
         findROI();
+        freeROI();
+        if (arene != NULL) {
+            CvRect rec = CvBoxtoCvRect(arene->getBox());
+            roi.x += rec.x;
+            roi.y += rec.y;
+        }
         applyROI();
+        filterThreshold = 200;
+        nbIterErode = 1;
+        nbIterDilate = 1;
         filterROI();
         findPositionPoints();
         tmpVecPosition = computeTriangleMasscenter(spots);
@@ -55,8 +76,8 @@ namespace robotInsa {
         return pos;
     }
 
-    CvBox2D AnalyseImage::computeAreaPosition(IplImage* image) {
-        imgSrc = cvCloneImage(image);
+    Arena AnalyseImage::computeAreaPosition(Image img) {
+        imgSrc = cvCloneImage(img.ipl());
         resizeWithFactor();
         filterThreshold = 230;
         nbIterErode = 2;
@@ -65,7 +86,8 @@ namespace robotInsa {
 
         CvBox2D box = {
             {0, 0},
-            {0, 0}, 0};
+            {0, 0}, 0
+        };
         CvPoint2D32f pt = cvPoint2D32f((double) imgBinarized->width / 2, (double) imgBinarized->height / 2);
         findShapeAreaAroundPoint(pt, &box);
 
@@ -74,7 +96,8 @@ namespace robotInsa {
         box.size.height = box.size.height*imageFactor;
         box.size.width = box.size.width*imageFactor;
 
-        return box;
+        Arena arene = Arena(box);
+        return arene;
     }
 
     void AnalyseImage::loadSrcImage(char *fileName) {
@@ -83,13 +106,22 @@ namespace robotInsa {
 
     void AnalyseImage::resizeWithFactor() {
         // declare a destination IplImage object with correct size, depth and channels
-        imgResized = cvCreateImage(
-                cvSize(
-                (int) (imgSrc->width / imageFactor),
-                (int) (imgSrc->height / imageFactor)),
-                imgSrc->depth,
-                imgSrc->nChannels);
+        if (arene != NULL) {
+            imgResized = cvCreateImage(
+                    cvSize(
+                    (int) (arene->getHeight() / imageFactor),
+                    (int) (arene->getWidth() / imageFactor)),
+                    imgSrc->depth,
+                    imgSrc->nChannels);
 
+        } else {
+            imgResized = cvCreateImage(
+                    cvSize(
+                    (int) (imgSrc->width / imageFactor),
+                    (int) (imgSrc->height / imageFactor)),
+                    imgSrc->depth,
+                    imgSrc->nChannels);
+        }
         //use cvResize to resize source to a destination image
         cvResize(imgSrc, imgResized);
     }
@@ -132,16 +164,19 @@ namespace robotInsa {
         // create memory storage that will contain all the dynamic data
         CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq* contours;
-        CvBox2D *pBox;
+        CvBox2D pBox;
 
         cvFindContours(imgBinarized, storage, &contours, sizeof (CvContour),
                 CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
         /* recherche de la forme la plus proche du robot */
         for (; contours != 0; contours = contours->h_next) {
-            *pBox = cvMinAreaRect2(contours);
-            h = pBox->size.height;
-            w = pBox->size.width;
+            pBox = cvMinAreaRect2(contours, storage);
+            /*IplImage *toto = cvCloneImage(imgSrc);
+            drawBox(toto, pBox);
+            showImage(toto, "box");*/
+            h = pBox.size.height;
+            w = pBox.size.width;
             if ((h != 0) && (w != 0)) {
                 if (h > w) {
                     tmp = h;
@@ -164,9 +199,14 @@ namespace robotInsa {
         roi.width = roi.width * imageFactor + 20;
         roi.x = roi.x * imageFactor - 10;
         roi.y = roi.y * imageFactor - 10;
+        /*IplImage *toto = cvCloneImage(imgSrc);
+        drawRec(toto, roi);
+        showImage(toto, "ROI");*/
+        //printf("x:%d, y:%d, h:%d, w;%d\n", roi.x, roi.y, roi.height, roi.width);
     }
 
     void AnalyseImage::applyROI() {
+
         cvSetImageROI(imgSrc, roi);
     }
 
@@ -191,15 +231,19 @@ namespace robotInsa {
         //Binarization
         cvThreshold(img_nvg_tmp, roiBinarized, filterThreshold, 255, CV_THRESH_OTSU);
 
-        cvErode(roiBinarized, roiBinarized, kernel, 1);
-        cvDilate(roiBinarized, roiBinarized, kernel, 1);
+        //Morphology
+        // Morphological opening (inverse because we have white pixels on black background)
+        if (nbIterDilate != 0)
+            cvDilate(imgBinarized, imgBinarized, kernel, nbIterDilate);
+        if (nbIterErode != 0)
+            cvErode(imgBinarized, imgBinarized, kernel, nbIterErode);
     }
 
     void AnalyseImage::findPositionPoints() {
         CvMemStorage* storage = cvCreateMemStorage(0);
         CvSeq *contour;
         CvSeq *c;
-        CvRect *pRect;
+        CvRect pRect;
         CvPoint pt;
         int cmpt = 0;
 
@@ -211,8 +255,8 @@ namespace robotInsa {
                 c = contour->v_next;
                 for (; c != 0; c = c->h_next) {
                     //Trouver le rect du contour
-                    *pRect = cvBoundingRect(c, 1);
-                    spots[cmpt] = computeMassCenter(c, pRect);
+                    pRect = cvBoundingRect(c, 1);
+                    spots[cmpt] = computeMassCenter(c, &pRect);
                     cmpt++;
                 }
             }
@@ -292,7 +336,7 @@ namespace robotInsa {
 
     float AnalyseImage::polarConversion(CvPoint2D32f vec) {
         float orientation = 0;
-        if ((vec.x > 0) && (vec.y >= 0)) {
+        if ((vec.x > 0.0) && (vec.y >= 0.0)) {
             orientation = atan(vec.y / vec.x);
         } else if ((vec.x > 0.0) && (vec.y >= 0.0)) {
             orientation = atan(vec.y / vec.x) + 2 * M_PI;

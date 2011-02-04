@@ -21,7 +21,7 @@ FC=
 AS=as
 
 # Macros
-CND_PLATFORM=GNU-MacOSX
+CND_PLATFORM=GNU-Linux-x86
 CND_CONF=Release
 CND_DISTDIR=dist
 
@@ -33,8 +33,8 @@ OBJECTDIR=build/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
-	${OBJECTDIR}/_ext/2044238718/toolsconvert.o \
 	${OBJECTDIR}/_ext/2042581214/exception.o \
+	${OBJECTDIR}/_ext/2044238718/toolsconvert.o \
 	${OBJECTDIR}/_ext/1612523285/server.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/_ext/2042581214/camera.o \
@@ -63,21 +63,21 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-Release.mk dist/Release/GNU-MacOSX/testlib
+	"${MAKE}"  -f nbproject/Makefile-Release.mk dist/Release/GNU-Linux-x86/testlib
 
-dist/Release/GNU-MacOSX/testlib: ${OBJECTFILES}
-	${MKDIR} -p dist/Release/GNU-MacOSX
+dist/Release/GNU-Linux-x86/testlib: ${OBJECTFILES}
+	${MKDIR} -p dist/Release/GNU-Linux-x86
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/testlib ${OBJECTFILES} ${LDLIBSOPTIONS} 
-
-${OBJECTDIR}/_ext/2044238718/toolsconvert.o: /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolsconvert.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/2044238718
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/2044238718/toolsconvert.o /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolsconvert.cpp
 
 ${OBJECTDIR}/_ext/2042581214/exception.o: /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/exception.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/2042581214
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/2042581214/exception.o /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/video/exception.cpp
+
+${OBJECTDIR}/_ext/2044238718/toolsconvert.o: /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolsconvert.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/2044238718
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/2044238718/toolsconvert.o /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/tools/toolsconvert.cpp
 
 ${OBJECTDIR}/_ext/1612523285/server.o: /Users/Piro/Documents/Implementation/DeStijl/insadestijl/c++/src/monitorCommunication/server.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1612523285
@@ -125,7 +125,7 @@ ${OBJECTDIR}/_ext/2044238718/toolstime.o: /Users/Piro/Documents/Implementation/D
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r build/Release
-	${RM} dist/Release/GNU-MacOSX/testlib
+	${RM} dist/Release/GNU-Linux-x86/testlib
 
 # Subprojects
 .clean-subprojects:
