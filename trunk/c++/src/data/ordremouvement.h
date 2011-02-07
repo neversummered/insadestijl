@@ -12,11 +12,22 @@
 
 #include "../monitorCommunication/message.h"
 
+#define DIRECTION_STOP            (0)
+#define DIRECTION_AVANCE          (1)
+#define DIRECTION_DROITE          (2)
+#define DIRECTION_GAUCHE          (3)
+#define DIRECTION_RECULE          (4)
+
 namespace robotInsa
 {
     class OrdreMouvement
     {
     public:
+        OrdreMouvement() {
+            direction = -1;
+            speed = -1;
+        }
+
         OrdreMouvement(Message msg) {
             direction = (int) *(msg.getData()+5);
             speed = (int) *(msg.getData()+6);

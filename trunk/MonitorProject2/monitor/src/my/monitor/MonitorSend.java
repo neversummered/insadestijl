@@ -34,11 +34,9 @@ public final class MonitorSend extends Thread {
 
             while (running == true) {
                 
-                if (monitor.direction != 0){ 
-                    getMsg();
-                    monitor.sendData(msg);
-                }
-
+                getMsg();
+                monitor.sendData(msg);
+                
                 try {
                     sleep(50);
                 } catch (InterruptedException p) {

@@ -847,7 +847,7 @@ public class monitorUI extends javax.swing.JFrame {
 
     private void jButtonDownActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDownActionPerformed
         if (ms.running) {
-            direction = -1;
+            direction = 4;
             jButtonRight.setEnabled(true);
             jButtonDown.setEnabled(false);
             jButtonLeft.setEnabled(true);
