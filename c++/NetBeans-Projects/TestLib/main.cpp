@@ -28,6 +28,7 @@
 #include "../../src/video/imageShop.h"
 #include "../../src/data/arena.h"
 #include "../../src/tools/cvrect32f.h"
+#include "../../src/robotCommunication/communicationrobot.h"
 
 //#include "/Users/Piro/Documents/Implementation/DeStijl/archi/video/utils.h"
 using namespace std;
@@ -418,14 +419,7 @@ void testCalibration() {
             OrdreMouvement mv = OrdreMouvement(msg);
             cout << "speed:" << mv.getSpeed()
                     << " direction:" << mv.getDirection() << endl;
-        } else if (msg.getType() == 'A') {
-            msg.print(10);
-            pthread_mutex_lock(&mutex);
-            act = Action(msg);
-            cout << "action:" << act.getOrder() << endl;
-            pthread_mutex_unlock(&mutex);
-
-        }
+        } 
     }
     s.closeServer();
 }
@@ -515,8 +509,86 @@ void testSingleVideo() {
 
     std::cout << std::endl;
     delete src;
-
 }
+
+void testCommRobot(){
+    CommunicationRobot c;
+    RobotStatus status;
+    c.RobotOpenCom();
+    //c.RobotStart();
+    //c.RobotSetMotors(1,1);
+    int vbat;
+    c.RobotGetVBat(&vbat);
+    cout << "Baterie:" << vbat << endl;
+    int sensor;
+    c.RobotGetSensor(&sensor);
+    cout << "capteur:" << sensor << endl;
+}
+
+void testManualControl(){
+    Server s;
+    s.openServer("9010");
+    int broke = 1;
+    Message msg = Message();
+    OrdreMouvement mv;
+
+    CommunicationRobot c;
+    c.RobotOpenCom();
+
+    long long time;
+    while (broke > 0) {
+        broke = s.receiveMessage(msg);
+        time = getTimeMillis();
+        if (msg.getType() == 'M') {
+            mv = OrdreMouvement(msg);
+            cout << "Ordre{dir:" << mv.getDirection()
+                    << ",speed:" << mv.getSpeed() << "}" << endl;
+            switch (mv.getDirection()) {
+                case DIRECTION_STOP:
+                    c.RobotSetMotors(0,0);
+                    break;
+                case DIRECTION_AVANCE:
+                    c.RobotSetMotors(1,1);
+                    break;
+                case DIRECTION_GAUCHE:
+                    c.RobotSetMotors(-1,1);
+                    break;
+                case DIRECTION_DROITE:
+                    c.RobotSetMotors(1,-1);
+                    break;
+                case DIRECTION_RECULE:
+                    c.RobotSetMotors(-1,-1);
+                    break;
+                default:
+                    c.RobotSetMotors(0,0);
+            }
+        }
+    }
+
+    s.closeServer();
+}
+
+/*void testManualControl(){
+    Server s;
+    s.openServer("9010");
+    int broke = 1;
+    long long time;
+
+    Message msg = message();
+    while (broke > 0) {
+        broke = s.receiveMessage(msg);
+        //cout << "message reçu {type:" << msg.getType() << "}" << endl;
+
+        if (msg.getType() == 'M') {
+            OrdreMouvement mv = OrdreMouvement(msg);
+            cout << "speed:" << mv.getSpeed()
+                    << " direction:" << mv.getDirection() << en
+
+    s.closeServer();
+
+    std::cout << std::endl;
+
+}*/
 
 int main(int argc, char* argv[]) {
     // testPosition2();
@@ -527,6 +599,9 @@ int main(int argc, char* argv[]) {
     //testArena();
     //testCalibration();
     //testArenaPosition();
-    testSingleVideo();
+    //testSingleVideo();
+    //testCommRobot();
+
+    testManualControl();
     return 0;
 }
