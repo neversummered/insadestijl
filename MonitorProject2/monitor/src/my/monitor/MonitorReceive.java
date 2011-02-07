@@ -13,7 +13,6 @@ public final class MonitorReceive extends Thread {
     Socket s;
     BufferedInputStream input;
     boolean running = true;
-
     char type;
     int size;
     byte[] tmp;
@@ -60,9 +59,11 @@ public final class MonitorReceive extends Thread {
                     }
                     tmp = new byte[size];
 
-                    while(input.available()<size);
+                    int size_read = 0;
+                    while (size_read < size) {
+                        size_read += input.read(tmp, size_read, size-size_read);                                   /* Lecture des données */
 
-                    input.read(tmp, 0, size);                                   /* Lecture des données */
+                    }
                     if (type == 'V') {                                          /* Données reçues de type video */
                         img = new ImageIcon(tmp).getImage();
                         monitor.show(img);
