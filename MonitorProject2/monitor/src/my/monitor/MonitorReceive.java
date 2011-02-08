@@ -4,6 +4,9 @@ import java.awt.Image;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 
 public final class MonitorReceive extends Thread {
@@ -12,17 +15,15 @@ public final class MonitorReceive extends Thread {
     Image img;
     Socket s;
     BufferedInputStream input;
-    boolean running = true;
+    boolean running;
     char type;
     int size;
-    byte[] tmp;
+    byte[] payload;
     byte[] head;
 
     @SuppressWarnings("LeakingThisInConstructor")
     public MonitorReceive(monitorUI m) {
-        setMonitor(m);
-        m.setMonitorReceive(this);
-        monitor = m;
+        this.monitor = m;
     }
 
     public void setMonitor(monitorUI monitor) {
@@ -42,50 +43,53 @@ public final class MonitorReceive extends Thread {
         return i;
     }
 
+    public void stopThread() {
+        running = false;
+    }
+
     public void run() {
-        while (true) {
-            try {
-                input = monitor.input;
-                while (running == true) {
+        running = true;
+        
+        try {
+            input = monitor.input;
+            System.out.println("Thread receive is running");
+            while (running == true) {
 
-                    head = new byte[5];
-                    input.read(head, 0, 5);                                     /* Lecture de l'en-tête */
-                    type = (char) head[0];                                      /* Lecture du type */
-                    size = getInt(head);                                        /* Lecture de la taille des données */
+                head = new byte[5];
+                input.read(head, 0, 5);  
 
-                    if (size == 0) {
-                        running = false;                                        /* Si la taille est 0 perte de la comm */
-                        break;
-                    }
-                    tmp = new byte[size];
+                type = (char) head[0];                                      /* Lecture du type */
+                size = getInt(head);                                        /* Lecture de la taille des données */
 
-                    int size_read = 0;
-                    while (size_read < size) {
-                        size_read += input.read(tmp, size_read, size-size_read);                                   /* Lecture des données */
+                if (size == 0) {
+                    running = false;                                        /* Si la taille est 0 perte de la comm */
+                    break;
+                }
+                payload = new byte[size];
 
-                    }
-                    if (type == 'V') {                                          /* Données reçues de type video */
-                        img = new ImageIcon(tmp).getImage();
-                        monitor.show(img);
-                    }
-
-                    if (type == 'P') {                                          /* Données reçues de type position */
-                        monitor.setPosition(tmp);
-                    }
+                int size_read = 0;
+                while (size_read < size) {
+                    size_read += input.read(payload, size_read, size - size_read);                                   /* Lecture des données */
 
                 }
-
-                while (running == false) {
-                    try {
-                        sleep(100);
-                    } catch (InterruptedException p) {
-                    }
+                if (type == 'V') {                                          /* Données reçues de type video */
+                    img = new ImageIcon(payload).getImage();
+                    monitor.show(img);
                 }
 
-
-            } catch (IOException e) {
+                if (type == 'P') {                                          /* Données reçues de type position */
+                    monitor.setPosition(payload);
+                }
+                if (type == 'R'){
+                    int robot_status = ByteBuffer.wrap(payload).getInt();
+                    monitor.changeRobotStatus(robot_status);
+                }
             }
+
+        } catch (IOException e) {
         }
+        monitor.changeCommunicationStatus(monitor.COMMUNICATION_DISCONNECTED);
+        System.out.println("Trhead receive is stopped");
 
     }
 }

@@ -11,14 +11,11 @@ public final class MonitorSend extends Thread {
     monitorUI monitor;
     Socket s;
     BufferedOutputStream output;
-    boolean running = true;
+    boolean running;
     byte[] msg;
 
     public MonitorSend(monitorUI m) {
-
-        setMonitor(m);
-        m.setMonitorSend(this);
-        monitor = m;
+        this.monitor = m;
     }
 
     public void getMsg() {
@@ -29,28 +26,23 @@ public final class MonitorSend extends Thread {
         this.monitor = monitor;
     }
 
+    public void stopThread() {
+        this.running = false;
+    }
+
     public void run() {
-        while (true) {
+        running = true;
+        System.out.println("Thread send is runnig");
+        while (running == true) {
 
-            while (running == true) {
-                
-                getMsg();
-                monitor.sendData(msg);
-                
-                try {
-                    sleep(50);
-                } catch (InterruptedException p) {
-                }
+            getMsg();
+            monitor.sendData(msg);
+
+            try {
+                sleep(50);
+            } catch (InterruptedException p) {
             }
-
-
-            while (running == false) {
-                try {
-                    sleep(100);
-                } catch (InterruptedException p) {
-                }
-            }
-
         }
+        System.out.println("Thread send is stopped");
     }
 }
