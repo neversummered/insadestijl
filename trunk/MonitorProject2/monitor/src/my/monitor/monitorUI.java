@@ -14,40 +14,241 @@ import java.nio.ByteBuffer;
 
 public class monitorUI extends javax.swing.JFrame {
 
-    static int NO_VIDEO = 0;
-    static int VIDEO_ARENA_CALIBRATION = 1;
-    static int VIDEO_ARENA_OK = 2;
+    static int VIDEO_UNKNOWN = 0;
+    static int VIDEO_FREE = 1;
+    static int VIDEO_ARENA_CALIBRATION = 2;
+    static int VIDEO_ARENA_OK = 3;
+    static int VIDEO_ARENA_KO = 4;
+    static int VIDEO_WITH_POSITION = 5;
+    static int ROBOT_UNKNOWN = -1;
+    static int ROBOT_CONNEXION_FAILED = 0;
+    static int ROBOT_CONNECTED = 2;
+    static int ROBOT_CONNEXION_TRYING = 3;
+    static int BAT_UNKNONW = -1;
+    static int BAT_HIGH = 1;
+    static int BAT_MED = 2;
+    static int BAT_LOW = 3;
+    static int COMMUNICATION_DISCONNECTED = 0;
+    static int COMMUNICATION_CONNECTED = 1;
+    static int COMMUNICATION_FAILURE = 2;
+    static int COMMUNICATION_TRYING = 3;
+    static int COMMUNICATION_CONNECTION_PROBLEMS = 5;
+    static int ORDER_FIND_ARENA = 1;
+    static int ORDER_ARENA_FAILED = 2;
+    static int ORDER_ARENA_IS_FOUND = 3;
+    static int ORDER_COMPUTE_CONTINUOUSLY_POSITION = 4;
+    static int ORDER_CONNECT_ROBOT = 10;
     int video_status;
+    int robot_status;
+    int bat_status;
+    int communication_status;
     private MonitorSend ms;
     private MonitorReceive mr;
     int port;
-    int direction = 0;
-    int speed = 50;
     boolean start = false;
     String address;
-    String status = "Disconnected";
     String status2;
     Socket so;
     BufferedOutputStream ps;
-    //PrintStream ps;
     BufferedInputStream input;
+    int direction = 0;
+    int speed = 50;
     char type;
-    //private BufferedImage bi;
     Graphics g;
     Image imagem;
     ImageIcon imm = null;
-    //int[] data;
     int length;
     byte[] size;
 
     public monitorUI() {
+        ms = new MonitorSend(this);
+        mr = new MonitorReceive(this);
 
         initComponents();
+        initMonitor();
+
+    }
+
+    private void initMonitor() {
+        initRobotCommunication();
+
+        video_status = VIDEO_UNKNOWN;
+
+        changeRobotStatus(ROBOT_UNKNOWN);
+        changeBatLevel(BAT_UNKNONW);
+
         jRadioManual.setSelected(true);
         for (Component component : jPanelAutomatic.getComponents()) {
             component.setEnabled(false);
         }
-        video_status = NO_VIDEO;
+
+        jPanelCamera.setVisible(false);
+        jPanelRobotStatus.setVisible(false);
+        jPanelControl.setVisible(false);
+
+        mr.stopThread();
+    }
+
+    private void initRobotCommunication() {
+        direction = 0;
+
+        ms.stopThread();
+
+        jButtonRight.setEnabled(true);
+        jButtonDown.setEnabled(true);
+        jButtonLeft.setEnabled(true);
+        jButtonUp.setEnabled(true);
+        jButtonStop.setEnabled(false);
+
+        speed = 50;
+        jSliderSpeed.setValue(speed);
+
+    }
+
+    public void changeRobotStatus(int newRobotStatus) {
+        robot_status = newRobotStatus;
+
+        if (newRobotStatus == ROBOT_UNKNOWN) {
+            JTextRobotStatus.setText("");
+            jPanelControl.setVisible(false);
+            initRobotCommunication();
+        } else if (newRobotStatus == ROBOT_CONNEXION_TRYING) {
+            JTextRobotStatus.setText("Waiting connexion");
+            jPanelControl.setVisible(false);
+            JButtonConnectRobot.setEnabled(false);
+            initRobotCommunication();
+        } else if (newRobotStatus == ROBOT_CONNEXION_FAILED) {
+            JTextRobotStatus.setText("Not connected");
+            jPanelControl.setVisible(false);
+            JButtonConnectRobot.setEnabled(true);
+            initRobotCommunication();
+        } else if (newRobotStatus == ROBOT_CONNECTED) {
+            JTextRobotStatus.setText("Connected");
+            jPanelControl.setVisible(true);
+            JButtonConnectRobot.setEnabled(false);
+            ms.start();
+        }
+    }
+
+    private void changeVideoStatus(int newVideoStatus) {
+        video_status = newVideoStatus;
+
+        if (newVideoStatus == VIDEO_UNKNOWN) {
+            jTextCoordinateX.setText("");
+            jTextCoordinateY.setText("");
+            jTextOrientation.setText("");
+        }
+    }
+
+    private void changeBatLevel(int newBatLevel) {
+        bat_status = newBatLevel;
+
+        if (newBatLevel == BAT_UNKNONW) {
+            jRadioButtonHighBat.setSelected(false);
+            jRadioButtonLowBat.setSelected(false);
+            jRadioButtonMedBat.setSelected(false);
+        } else if (newBatLevel == BAT_HIGH) {
+            jRadioButtonHighBat.setSelected(true);
+        } else if (newBatLevel == BAT_MED) {
+            jRadioButtonMedBat.setSelected(true);
+        } else if (newBatLevel == BAT_LOW) {
+            jRadioButtonLowBat.setSelected(true);
+        }
+    }
+
+    public void changeCommunicationStatus(int newCommunicationStatus) {
+        communication_status = newCommunicationStatus;
+
+        if (newCommunicationStatus == COMMUNICATION_CONNECTED) {
+            jTextStatusCon.setText("Connected");
+            jTextStatusCon2.setText("");
+            jTextIp.setEditable(false);
+            jTextPort.setEditable(false);
+
+            mr.start();
+
+            jPanelCamera.setVisible(true);
+            jPanelRobotStatus.setVisible(true);
+        }
+        if (newCommunicationStatus == COMMUNICATION_FAILURE) {
+            jTextStatusCon.setText("Disconnected");
+            jTextStatusCon2.setText("Server not found");
+            initMonitor();
+        }
+        if (newCommunicationStatus == COMMUNICATION_TRYING) {
+            jTextStatusCon2.setText("Trying...");
+        }
+        if (newCommunicationStatus == COMMUNICATION_DISCONNECTED) {
+            jTextStatusCon.setText("Disconnected");
+            jTextStatusCon2.setText("");
+            jTextIp.setEditable(true);
+            jTextPort.setEditable(true);
+            initMonitor();
+        }
+        if (newCommunicationStatus == COMMUNICATION_CONNECTION_PROBLEMS) {
+            jTextStatusCon.setText("Connection problems");
+            jTextStatusCon2.setText("");
+            jTextIp.setEditable(false);
+            jTextPort.setEditable(false);
+            initMonitor();
+        }
+    }
+
+    public byte[] intToByte(int value) {
+        byte[] b = new byte[4];
+        b[0] = (byte) (value >> 24);
+        b[1] = (byte) (value >> 16);
+        b[2] = (byte) (value >> 8);
+        b[3] = (byte) (value);
+        return b;
+    }
+
+    public static void printByteArray(byte[] b, int nbData) {
+        if (nbData > b.length) {
+            nbData = b.length;
+        }
+        for (int i = 0; i < nbData; i++) {
+            System.out.print(Integer.toHexString(0xFF & b[i]) + " ");
+            if (((i + 1) % 25) == 0) {
+                System.out.println();
+            }
+        }
+        System.out.println();
+    }
+
+    public void sendData(byte[] data) {
+        try {
+            ps.write(data);
+            ps.flush();
+        } catch (IOException ex) {
+            closeConnexion();
+            Logger.getLogger(monitorUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    public void sendAction(int action) {
+
+        length = 4;
+        byte[] data = new byte[5 + length];
+        data[0] = 'A';
+        System.arraycopy(intToByte(length), 0, data, 1, 4);
+        System.arraycopy(intToByte(action), 0, data, 5, 4);
+        sendData(data);
+    }
+
+    public void closeConnexion() {
+        changeCommunicationStatus(COMMUNICATION_DISCONNECTED);
+        try {
+            so.close();
+        } catch (IOException ex) {
+            Logger.getLogger(monitorUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void show(Image m) {
+        imm = new ImageIcon(m);
+        jLabel1.setIcon(imm);
 
     }
 
@@ -70,6 +271,30 @@ public class monitorUI extends javax.swing.JFrame {
         buttonGroup5 = new javax.swing.ButtonGroup();
         buttonGroup6 = new javax.swing.ButtonGroup();
         buttonGroup7 = new javax.swing.ButtonGroup();
+        buttonGroup8 = new javax.swing.ButtonGroup();
+        jPanel3 = new javax.swing.JPanel();
+        jLabel11 = new javax.swing.JLabel();
+        jButtonConnect = new javax.swing.JButton();
+        jTextPort = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jTextIp = new javax.swing.JTextField();
+        jTextStatusCon = new javax.swing.JTextField();
+        jTextStatusCon2 = new javax.swing.JTextField();
+        jPanelCamera = new javax.swing.JPanel();
+        jLabel14 = new javax.swing.JLabel();
+        jTextField7 = new javax.swing.JTextField();
+        jLabel15 = new javax.swing.JLabel();
+        jTextField8 = new javax.swing.JTextField();
+        jLabel16 = new javax.swing.JLabel();
+        jTextField9 = new javax.swing.JTextField();
+        jLabel17 = new javax.swing.JLabel();
+        jButtonStartDetectArena = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jRadioButton1 = new javax.swing.JRadioButton();
+        jRadioButton2 = new javax.swing.JRadioButton();
+        jButtonComputePosition = new javax.swing.JButton();
+        jPanelControl = new javax.swing.JPanel();
         jPanel6 = new javax.swing.JPanel();
         jLabel19 = new javax.swing.JLabel();
         jRadioManual = new javax.swing.JRadioButton();
@@ -98,32 +323,193 @@ public class monitorUI extends javax.swing.JFrame {
         jLabelOrientation = new javax.swing.JLabel();
         jTextMissionStatus = new javax.swing.JTextField();
         jLabelMission = new javax.swing.JLabel();
-        jPanel5 = new javax.swing.JPanel();
-        jLabel14 = new javax.swing.JLabel();
-        jTextField7 = new javax.swing.JTextField();
-        jLabel15 = new javax.swing.JLabel();
-        jTextField8 = new javax.swing.JTextField();
-        jLabel16 = new javax.swing.JLabel();
-        jTextField9 = new javax.swing.JTextField();
-        jLabel17 = new javax.swing.JLabel();
-        jButton9 = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        jPanel3 = new javax.swing.JPanel();
-        jLabel11 = new javax.swing.JLabel();
-        jButtonConnect = new javax.swing.JButton();
-        jTextPort = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jTextIp = new javax.swing.JTextField();
-        jTextStatusCon = new javax.swing.JTextField();
-        jTextStatusCon2 = new javax.swing.JTextField();
-        jRadioButton1 = new javax.swing.JRadioButton();
-        jRadioButton2 = new javax.swing.JRadioButton();
+        jPanelRobotStatus = new javax.swing.JPanel();
+        JButtonConnectRobot = new javax.swing.JButton();
+        jLabel4 = new javax.swing.JLabel();
+        JTextRobotStatus = new javax.swing.JTextField();
+        jRadioButtonHighBat = new javax.swing.JRadioButton();
+        jRadioButtonMedBat = new javax.swing.JRadioButton();
+        jRadioButtonLowBat = new javax.swing.JRadioButton();
+        jLabel7 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
 
+        jLabel11.setFont(new java.awt.Font("Liberation Sans", 1, 14));
+        jLabel11.setText("Connection");
+
+        jButtonConnect.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jButtonConnect.setText("Connect/Disconnect");
+        jButtonConnect.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jButtonConnectMouseClicked(evt);
+            }
+        });
+
+        jTextPort.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jTextPort.setText("9010");
+        jTextPort.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextPortActionPerformed(evt);
+            }
+        });
+
+        jLabel2.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jLabel2.setText("IP address");
+
+        jLabel3.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jLabel3.setText("Port");
+
+        jTextIp.setText("localhost");
+
+        jTextStatusCon.setEditable(false);
+        jTextStatusCon.setFont(new java.awt.Font("DejaVu Sans", 1, 12));
+        jTextStatusCon.setText("Disconnected");
+
+        jTextStatusCon2.setEditable(false);
+        jTextStatusCon2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextStatusCon2ActionPerformed(evt);
+            }
+        });
+
+        jLabel14.setFont(new java.awt.Font("Liberation Sans", 1, 14));
+        jLabel14.setText("Current Position");
+
+        jTextField7.setEditable(false);
+        jTextField7.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+
+        jLabel15.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jLabel15.setText("X");
+
+        jTextField8.setEditable(false);
+        jTextField8.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+
+        jLabel16.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jLabel16.setText("Y");
+
+        jTextField9.setEditable(false);
+        jTextField9.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jTextField9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField9ActionPerformed(evt);
+            }
+        });
+
+        jLabel17.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jLabel17.setText("Angle");
+
+        jButtonStartDetectArena.setFont(new java.awt.Font("Liberation Sans", 0, 12));
+        jButtonStartDetectArena.setText("Detect Arena");
+        jButtonStartDetectArena.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jButtonStartDetectArenaMouseClicked(evt);
+            }
+        });
+        jButtonStartDetectArena.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonStartDetectArenaActionPerformed(evt);
+            }
+        });
+
+        jLabel1.setBackground(new java.awt.Color(255, 255, 255));
+        jLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jLabel1.setPreferredSize(new java.awt.Dimension(640, 480));
+        jLabel1.setSize(new java.awt.Dimension(640, 480));
+        jLabel1.addContainerListener(new java.awt.event.ContainerAdapter() {
+            public void componentAdded(java.awt.event.ContainerEvent evt) {
+                jLabel1ComponentAdded(evt);
+            }
+        });
+
+        buttonGroup3.add(jRadioButton1);
+        jRadioButton1.setText("The arena is ok");
+        jRadioButton1.setEnabled(false);
+        jRadioButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButton1ActionPerformed(evt);
+            }
+        });
+
+        buttonGroup3.add(jRadioButton2);
+        jRadioButton2.setText("The arena is not ok");
+        jRadioButton2.setEnabled(false);
+        jRadioButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButton2ActionPerformed(evt);
+            }
+        });
+
+        jButtonComputePosition.setText("Continuous Detection of Position");
+        jButtonComputePosition.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonComputePositionActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanelCameraLayout = new javax.swing.GroupLayout(jPanelCamera);
+        jPanelCamera.setLayout(jPanelCameraLayout);
+        jPanelCameraLayout.setHorizontalGroup(
+            jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelCameraLayout.createSequentialGroup()
+                .addGap(26, 26, 26)
+                .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addGroup(jPanelCameraLayout.createSequentialGroup()
+                        .addComponent(jButtonComputePosition)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanelCameraLayout.createSequentialGroup()
+                                .addComponent(jLabel15)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel16)
+                                .addGap(3, 3, 3)
+                                .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel17)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jLabel14)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanelCameraLayout.createSequentialGroup()
+                            .addComponent(jButtonStartDetectArena, javax.swing.GroupLayout.PREFERRED_SIZE, 172, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(18, 18, 18)
+                            .addComponent(jRadioButton1)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jRadioButton2))
+                        .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 640, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanelCameraLayout.setVerticalGroup(
+            jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelCameraLayout.createSequentialGroup()
+                .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButtonStartDetectArena)
+                    .addComponent(jRadioButton1)
+                    .addComponent(jRadioButton2))
+                .addGap(11, 11, 11)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 480, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel14)
+                    .addComponent(jButtonComputePosition))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel16)
+                            .addComponent(jLabel17))
+                        .addGroup(jPanelCameraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel15))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         jLabel19.setFont(new java.awt.Font("Liberation Sans", 1, 14));
+        jLabel19.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel19.setText("Mode Selection");
 
         buttonGroup1.add(jRadioManual);
@@ -149,16 +535,12 @@ public class monitorUI extends javax.swing.JFrame {
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel6Layout.createSequentialGroup()
-                        .addGap(83, 83, 83)
-                        .addComponent(jLabel19))
-                    .addGroup(jPanel6Layout.createSequentialGroup()
-                        .addGap(41, 41, 41)
-                        .addComponent(jRadioManual)
-                        .addGap(39, 39, 39)
-                        .addComponent(jRadioAutomatic)))
+                .addGap(41, 41, 41)
+                .addComponent(jRadioManual)
+                .addGap(39, 39, 39)
+                .addComponent(jRadioAutomatic)
                 .addContainerGap(106, Short.MAX_VALUE))
+            .addComponent(jLabel19, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE)
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -177,7 +559,7 @@ public class monitorUI extends javax.swing.JFrame {
         jLabel5.setFont(new java.awt.Font("Liberation Sans", 1, 12));
         jLabel5.setText("Manual Mode:");
 
-        jButtonUp.setFont(new java.awt.Font("DejaVu Sans", 1, 14)); // NOI18N
+        jButtonUp.setFont(new java.awt.Font("DejaVu Sans", 1, 14));
         jButtonUp.setText("↑");
         jButtonUp.setEnabled(false);
         jButtonUp.setFocusable(false);
@@ -212,7 +594,7 @@ public class monitorUI extends javax.swing.JFrame {
             }
         });
 
-        jButtonStop.setFont(new java.awt.Font("Liberation Sans", 0, 12)); // NOI18N
+        jButtonStop.setFont(new java.awt.Font("Liberation Sans", 0, 12));
         jButtonStop.setText("STOP");
         jButtonStop.setEnabled(false);
         jButtonStop.setFocusable(false);
@@ -222,7 +604,7 @@ public class monitorUI extends javax.swing.JFrame {
             }
         });
 
-        jButtonRight.setFont(new java.awt.Font("DejaVu Sans", 1, 14)); // NOI18N
+        jButtonRight.setFont(new java.awt.Font("DejaVu Sans", 1, 14));
         jButtonRight.setText("→");
         jButtonRight.setEnabled(false);
         jButtonRight.setFocusable(false);
@@ -426,225 +808,149 @@ public class monitorUI extends javax.swing.JFrame {
                 .addContainerGap(20, Short.MAX_VALUE))
         );
 
-        jLabel14.setFont(new java.awt.Font("Liberation Sans", 1, 14));
-        jLabel14.setText("Current Position");
+        javax.swing.GroupLayout jPanelControlLayout = new javax.swing.GroupLayout(jPanelControl);
+        jPanelControl.setLayout(jPanelControlLayout);
+        jPanelControlLayout.setHorizontalGroup(
+            jPanelControlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelControlLayout.createSequentialGroup()
+                .addGap(10, 10, 10)
+                .addGroup(jPanelControlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel6, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanelManual, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanelAutomatic, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanelControlLayout.setVerticalGroup(
+            jPanelControlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelControlLayout.createSequentialGroup()
+                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanelManual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanelAutomatic, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(20, 20, 20))
+        );
 
-        jTextField7.setEditable(false);
-        jTextField7.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-
-        jLabel15.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jLabel15.setText("X");
-
-        jTextField8.setEditable(false);
-        jTextField8.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-
-        jLabel16.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jLabel16.setText("Y");
-
-        jTextField9.setEditable(false);
-        jTextField9.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jTextField9.addActionListener(new java.awt.event.ActionListener() {
+        JButtonConnectRobot.setText("Connect Robot");
+        JButtonConnectRobot.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField9ActionPerformed(evt);
+                JButtonConnectRobotActionPerformed(evt);
             }
         });
 
-        jLabel17.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jLabel17.setText("Angle");
+        jLabel4.setText("Robot status");
 
-        jButton9.setFont(new java.awt.Font("Liberation Sans", 0, 12)); // NOI18N
-        jButton9.setText("start");
-        jButton9.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jButton9MouseClicked(evt);
-            }
-        });
-        jButton9.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton9ActionPerformed(evt);
-            }
-        });
+        buttonGroup8.add(jRadioButtonHighBat);
+        jRadioButtonHighBat.setEnabled(false);
 
-        jLabel1.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-        jLabel1.setPreferredSize(new java.awt.Dimension(640, 480));
-        jLabel1.setSize(new java.awt.Dimension(640, 480));
-        jLabel1.addContainerListener(new java.awt.event.ContainerAdapter() {
-            public void componentAdded(java.awt.event.ContainerEvent evt) {
-                jLabel1ComponentAdded(evt);
-            }
-        });
+        buttonGroup8.add(jRadioButtonMedBat);
+        jRadioButtonMedBat.setEnabled(false);
 
-        jLabel11.setFont(new java.awt.Font("Liberation Sans", 1, 14));
-        jLabel11.setText("Connection");
+        buttonGroup8.add(jRadioButtonLowBat);
+        jRadioButtonLowBat.setEnabled(false);
 
-        jButtonConnect.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jButtonConnect.setText("Connect/Disconnect");
-        jButtonConnect.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jButtonConnectMouseClicked(evt);
-            }
-        });
+        jLabel7.setText("Battery level");
 
-        jTextPort.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jTextPort.setText("9010");
-        jTextPort.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextPortActionPerformed(evt);
-            }
-        });
-
-        jLabel2.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jLabel2.setText("IP address");
-
-        jLabel3.setFont(new java.awt.Font("Liberation Sans", 0, 12));
-        jLabel3.setText("Port");
-
-        jTextIp.setText("localhost");
-
-        jTextStatusCon.setEditable(false);
-        jTextStatusCon.setFont(new java.awt.Font("DejaVu Sans", 1, 12));
-        jTextStatusCon.setText("Disconnected");
-
-        jTextStatusCon2.setEditable(false);
-        jTextStatusCon2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextStatusCon2ActionPerformed(evt);
-            }
-        });
+        javax.swing.GroupLayout jPanelRobotStatusLayout = new javax.swing.GroupLayout(jPanelRobotStatus);
+        jPanelRobotStatus.setLayout(jPanelRobotStatusLayout);
+        jPanelRobotStatusLayout.setHorizontalGroup(
+            jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
+                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel7))
+                    .addComponent(JButtonConnectRobot, javax.swing.GroupLayout.Alignment.LEADING))
+                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
+                        .addGap(21, 21, 21)
+                        .addComponent(jLabel4)
+                        .addGap(18, 18, 18)
+                        .addComponent(JTextRobotStatus, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRobotStatusLayout.createSequentialGroup()
+                        .addGap(104, 104, 104)
+                        .addComponent(jRadioButtonHighBat)
+                        .addGap(21, 21, 21)
+                        .addComponent(jRadioButtonMedBat)
+                        .addGap(18, 18, 18)
+                        .addComponent(jRadioButtonLowBat)
+                        .addGap(108, 108, 108))))
+        );
+        jPanelRobotStatusLayout.setVerticalGroup(
+            jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
+                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(JButtonConnectRobot)
+                    .addComponent(jLabel4)
+                    .addComponent(JTextRobotStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jRadioButtonHighBat)
+                        .addComponent(jRadioButtonMedBat)
+                        .addComponent(jRadioButtonLowBat))
+                    .addComponent(jLabel7))
+                .addContainerGap(6, Short.MAX_VALUE))
+        );
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addGap(18, 18, 18)
-                        .addComponent(jTextIp, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextPort, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(6, 6, 6)
+                        .addComponent(jPanelCamera, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(14, 14, 14)
+                        .addComponent(jPanelControl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(jLabel11)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(jLabel2)
+                                .addGap(18, 18, 18)
+                                .addComponent(jTextIp, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jTextPort, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(jLabel11)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButtonConnect)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButtonConnect)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jTextStatusCon2, javax.swing.GroupLayout.DEFAULT_SIZE, 129, Short.MAX_VALUE)
-                    .addComponent(jTextStatusCon, javax.swing.GroupLayout.DEFAULT_SIZE, 129, Short.MAX_VALUE))
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jTextStatusCon)
+                            .addComponent(jTextStatusCon2, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jPanelRobotStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addGap(12, 12, 12)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(jTextStatusCon, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextStatusCon2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel11)
-                            .addComponent(jButtonConnect))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(jTextIp, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel3))))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        buttonGroup3.add(jRadioButton1);
-        jRadioButton1.setText("The arena is ok");
-        jRadioButton1.setEnabled(false);
-        jRadioButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButton1ActionPerformed(evt);
-            }
-        });
-
-        buttonGroup3.add(jRadioButton2);
-        jRadioButton2.setText("The arena is not ok");
-        jRadioButton2.setEnabled(false);
-        jRadioButton2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButton2ActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
-        jPanel5.setLayout(jPanel5Layout);
-        jPanel5Layout.setHorizontalGroup(
-            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel5Layout.createSequentialGroup()
-                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addGap(26, 26, 26)
-                        .addComponent(jLabel14)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jLabel15)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel16)
-                        .addGap(3, 3, 3)
-                        .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel17)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jButton9)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 38, Short.MAX_VALUE)
-                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jRadioButton1)
-                            .addComponent(jRadioButton2))
-                        .addGap(79, 79, 79))
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 640, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(151, Short.MAX_VALUE))
-        );
-        jPanel5Layout.setVerticalGroup(
-            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel5Layout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel5Layout.createSequentialGroup()
-                                .addGap(20, 20, 20)
-                                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel16)
-                                            .addComponent(jLabel17))
-                                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel15)))))
-                            .addGroup(jPanel5Layout.createSequentialGroup()
-                                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel14)
-                                    .addComponent(jRadioButton1))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jRadioButton2)))
-                        .addGap(11, 11, 11))
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addComponent(jButton9)
-                        .addGap(18, 18, 18)))
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 480, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addGroup(jPanel3Layout.createSequentialGroup()
+                            .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel11)
+                                .addComponent(jButtonConnect))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel2)
+                                .addComponent(jTextIp, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jTextPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel3)))
+                        .addGroup(jPanel3Layout.createSequentialGroup()
+                            .addComponent(jTextStatusCon, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(jTextStatusCon2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jPanelRobotStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanelCamera, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanelControl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(58, 58, 58))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -653,27 +959,14 @@ public class monitorUI extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanelAutomatic, 0, 348, Short.MAX_VALUE)
-                    .addComponent(jPanelManual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(55, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 648, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanelManual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanelAutomatic, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 669, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
@@ -705,15 +998,6 @@ public class monitorUI extends javax.swing.JFrame {
         }
     }
 
-    public byte[] intToByte(int value) {
-        byte[] b = new byte[4];
-        b[0] = (byte) (value >> 24);
-        b[1] = (byte) (value >> 16);
-        b[2] = (byte) (value >> 8);
-        b[3] = (byte) (value);
-        return b;
-    }
-
     public byte[] getData() {
         if (jRadioManual.isSelected()) {
             length = 2;
@@ -734,91 +1018,6 @@ public class monitorUI extends javax.swing.JFrame {
         jTextField7.setText(Integer.toString(buf.getInt()));
         jTextField8.setText(Integer.toString(buf.getInt()));
         jTextField9.setText(Integer.toString(buf.getInt()));
-    }
-
-    public static void printByteArray(byte[] b, int nbData) {
-        if (nbData > b.length) {
-            nbData = b.length;
-        }
-        for (int i = 0; i < nbData; i++) {
-            System.out.print(Integer.toHexString(0xFF & b[i]) + " ");
-            if (((i + 1) % 25) == 0) {
-                System.out.println();
-            }
-        }
-        System.out.println();
-    }
-
-    public void updateStatusCon(String s) {
-
-        if (s.equals("Connected")) {
-            jTextStatusCon.setText("Connected");
-            jTextStatusCon2.setText("");
-            jTextIp.setEditable(false);
-            jTextPort.setEditable(false);
-        }
-        if (s.equals("failure")) {
-            jTextStatusCon.setText("Disconnected");
-            jTextStatusCon2.setText("Server not found");
-        }
-        if (s.equals("trying")) {
-            jTextStatusCon2.setText("Trying...");
-        }
-        if (s.equals("Disconnected")) {
-            jTextStatusCon.setText("Disconnected");
-            jTextStatusCon2.setText("");
-            jTextIp.setEditable(true);
-            jTextPort.setEditable(true);
-        }
-        if (s.equals("Connection problems")) {
-            jTextStatusCon.setText("Connection problems");
-            jTextStatusCon2.setText("");
-            jTextIp.setEditable(false);
-            jTextPort.setEditable(false);
-        }
-    }
-
-    public void sendData(byte[] data) {
-        try {
-            ps.write(data);
-            ps.flush();
-        } catch (IOException ex) {
-            closeConnexion();
-            Logger.getLogger(monitorUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-    }
-
-    public void closeConnexion() {
-        direction = 0;
-
-        jButtonRight.setEnabled(false);
-        jButtonDown.setEnabled(false);
-        jButtonLeft.setEnabled(false);
-        jButtonUp.setEnabled(false);
-        jButtonStop.setEnabled(false);
-
-        ms.running = false;
-        mr.running = false;
-        try {
-            so.close();
-        } catch (IOException ex) {
-            Logger.getLogger(monitorUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        video_status = NO_VIDEO;
-        jButton9.setText("Start");
-        jButton9.setEnabled(true);
-        jRadioButton1.setEnabled(false);
-        jRadioButton2.setEnabled(false);
-        buttonGroup3.clearSelection();
-        status = "Disconnected";
-        updateStatusCon(status);
-    }
-
-    public void show(Image m) {
-        imm = new ImageIcon(m);
-        jLabel1.setIcon(imm);
-
     }
 
     private void jRadioManualMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jRadioManualMouseClicked
@@ -878,15 +1077,11 @@ public class monitorUI extends javax.swing.JFrame {
 
     private void jButtonConnectMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonConnectMouseClicked
 
-        status = jTextStatusCon.getText();
-        speed = jSliderSpeed.getValue();
-
-        if (status.equals("Disconnected")) {
+        if (communication_status != COMMUNICATION_CONNECTED) {
             if (jTextPort.getText().equals("") || jTextIp.getText().equals("")) {
                 jTextStatusCon2.setText("Missing information");
             } else {
-                status = "trying";
-                updateStatusCon(status);
+                changeCommunicationStatus(COMMUNICATION_TRYING);
                 int Port = getPort();
                 String Address = getAddress();
 
@@ -894,35 +1089,16 @@ public class monitorUI extends javax.swing.JFrame {
                     so = new Socket(Address, Port);
                     ps = new BufferedOutputStream(this.so.getOutputStream());
                     input = new BufferedInputStream(this.so.getInputStream());
-                    status = "Connected";
-                    updateStatusCon(status);
 
-                    jButtonRight.setEnabled(true);
-                    jButtonDown.setEnabled(true);
-                    jButtonLeft.setEnabled(true);
-                    jButtonUp.setEnabled(true);
-                    jButtonStop.setEnabled(false);
-
-                    if (start == false) {
-                        ms.start();
-                        mr.start();
-                        start = true;
-                    }
-
-                    ms.running = true;
-                    mr.running = true;
-
+                    changeCommunicationStatus(COMMUNICATION_CONNECTED);
 
                 } catch (IOException e) {
-                    status = "failure";
-                    updateStatusCon(status);
+                    changeCommunicationStatus(COMMUNICATION_FAILURE);
                 }
             }
         } else {
             closeConnexion();
         }
-
-
     }//GEN-LAST:event_jButtonConnectMouseClicked
 
     private void jButtonUpMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonUpMouseClicked
@@ -982,43 +1158,28 @@ public class monitorUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jLabel1ComponentAdded
 
-    private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
-        // TODO add your handling code here:
-        if (!status.equals("Connected")) {
-            video_status = 0;
-        } else {
-            if (video_status == NO_VIDEO) {
-                video_status = VIDEO_ARENA_CALIBRATION;
-                jButton9.setText("Send");
-                jButton9.setEnabled(false);
-                jRadioButton1.setEnabled(true);
-                jRadioButton2.setEnabled(true);
-            } else if (video_status == VIDEO_ARENA_CALIBRATION) {
-                if (jRadioButton1.isSelected()) {
-                    video_status = VIDEO_ARENA_OK;
-                    jButton9.setText("running");
-                    jButton9.setEnabled(false);
-                    jRadioButton1.setEnabled(false);
-                    jRadioButton2.setEnabled(false);
-                    buttonGroup3.clearSelection();
-                } else if (jRadioButton2.isSelected()) {
-                    video_status = VIDEO_ARENA_CALIBRATION;
-                    jButton9.setEnabled(false);
-                    buttonGroup3.clearSelection();
-                }
-            }
-
-            length = 4;
-            byte[] data = new byte[5 + length];
-            data[0] = 'A';
-            System.arraycopy(intToByte(length), 0, data, 1, 4);
-            System.arraycopy(intToByte(video_status), 0, data, 5, 4);
-            sendData(data);
+    private void jButtonStartDetectArenaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStartDetectArenaActionPerformed
+        int test = 1;
+        //Custom button text OUI:0 NON:1 CANCEL:2
+        while (test == 1) {
+            sendAction(ORDER_FIND_ARENA);
+            test = JOptionPane.showConfirmDialog(null,
+                    "Est-ce que l'arène est délimitée par le carré vert ?",
+                    "Calibration",
+                    JOptionPane.YES_NO_CANCEL_OPTION);
         }
-    }//GEN-LAST:event_jButton9ActionPerformed
 
-    private void jButton9MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton9MouseClicked
-    }//GEN-LAST:event_jButton9MouseClicked
+        if (test == 2) {
+            sendAction(ORDER_ARENA_FAILED);
+        } else if (test == 0) {
+            sendAction(ORDER_ARENA_IS_FOUND);
+        }
+
+        //}
+    }//GEN-LAST:event_jButtonStartDetectArenaActionPerformed
+
+    private void jButtonStartDetectArenaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonStartDetectArenaMouseClicked
+    }//GEN-LAST:event_jButtonStartDetectArenaMouseClicked
 
     private void jTextPortActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextPortActionPerformed
         // TODO add your handling code here:
@@ -1026,13 +1187,22 @@ public class monitorUI extends javax.swing.JFrame {
 
     private void jRadioButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
         // TODO add your handling code here:
-        jButton9.setEnabled(true);
+        jButtonStartDetectArena.setEnabled(true);
     }//GEN-LAST:event_jRadioButton1ActionPerformed
 
     private void jRadioButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton2ActionPerformed
         // TODO add your handling code here:
-        jButton9.setEnabled(true);
+        jButtonStartDetectArena.setEnabled(true);
     }//GEN-LAST:event_jRadioButton2ActionPerformed
+
+    private void JButtonConnectRobotActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JButtonConnectRobotActionPerformed
+        sendAction(ORDER_CONNECT_ROBOT);
+        changeRobotStatus(ROBOT_CONNEXION_TRYING);
+    }//GEN-LAST:event_JButtonConnectRobotActionPerformed
+
+    private void jButtonComputePositionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonComputePositionActionPerformed
+        sendAction(ORDER_COMPUTE_CONTINUOUSLY_POSITION);
+    }//GEN-LAST:event_jButtonComputePositionActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -1046,6 +1216,8 @@ public class monitorUI extends javax.swing.JFrame {
         });
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton JButtonConnectRobot;
+    private javax.swing.JTextField JTextRobotStatus;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.ButtonGroup buttonGroup2;
     private javax.swing.ButtonGroup buttonGroup3;
@@ -1053,12 +1225,14 @@ public class monitorUI extends javax.swing.JFrame {
     private javax.swing.ButtonGroup buttonGroup5;
     private javax.swing.ButtonGroup buttonGroup6;
     private javax.swing.ButtonGroup buttonGroup7;
-    private javax.swing.JButton jButton9;
+    private javax.swing.ButtonGroup buttonGroup8;
+    private javax.swing.JButton jButtonComputePosition;
     private javax.swing.JButton jButtonConnect;
     private javax.swing.JButton jButtonDown;
     private javax.swing.JButton jButtonExecute;
     private javax.swing.JButton jButtonLeft;
     private javax.swing.JButton jButtonRight;
+    private javax.swing.JButton jButtonStartDetectArena;
     private javax.swing.JButton jButtonStop;
     private javax.swing.JButton jButtonUp;
     private javax.swing.JComboBox jComboObjective;
@@ -1071,8 +1245,10 @@ public class monitorUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabelAutomatic;
     private javax.swing.JLabel jLabelMission;
     private javax.swing.JLabel jLabelOrientation;
@@ -1080,13 +1256,18 @@ public class monitorUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabelX;
     private javax.swing.JLabel jLabelY;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanelAutomatic;
+    private javax.swing.JPanel jPanelCamera;
+    private javax.swing.JPanel jPanelControl;
     private javax.swing.JPanel jPanelManual;
+    private javax.swing.JPanel jPanelRobotStatus;
     private javax.swing.JRadioButton jRadioAutomatic;
     private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JRadioButton jRadioButton2;
+    private javax.swing.JRadioButton jRadioButtonHighBat;
+    private javax.swing.JRadioButton jRadioButtonLowBat;
+    private javax.swing.JRadioButton jRadioButtonMedBat;
     private javax.swing.JRadioButton jRadioCoordinate;
     private javax.swing.JRadioButton jRadioManual;
     private javax.swing.JRadioButton jRadioObjective;

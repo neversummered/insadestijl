@@ -7,7 +7,5 @@ public class Main
     {
                 monitorUI monitor = new monitorUI();
                 monitor.setVisible(true);
-                MonitorSend monitorS = new MonitorSend(monitor);
-                MonitorReceive monitorR = new MonitorReceive(monitor);
     }
 }
