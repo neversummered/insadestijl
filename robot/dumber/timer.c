@@ -28,8 +28,8 @@
 
 void callback_activite(void);
 
-#define MOTEUR_VITESSE_NORMAL	0x65
-#define MOTEUR_VITESSE_TURBO	0xA0
+#define MOTEUR_VITESSE_NORMAL	0x35
+#define MOTEUR_VITESSE_TURBO	0x70
 
 char WDT_demarre;
 unsigned int WDT_compteur;
@@ -37,6 +37,8 @@ char WDT_etat;
 
 #define SEUIL_MIN_WDT	3600 /* 100 ms */
 #define SEUIL_MAX_WDT   4320 /* 120 ms */
+
+extern struct ST_EEPROM params;
 
 void timer_init(void)
 {
@@ -148,7 +150,7 @@ char regle_moteur(char moteur, signed char cmd)
 {
 char status = 1;
 
-	if (moteur == 2)
+	if (moteur == 1) /* Moteur gauche */
 	{
 		switch (cmd)
 		{
@@ -156,50 +158,50 @@ char status = 1;
 			OCR0A = 0xFF;
 			OCR0B = 0xFF;
 			break;
-		case MOTEUR_ARRIERE:
-			OCR0A = MOTEUR_VITESSE_NORMAL;
+		case MOTEUR_AVANT:
+			OCR0A = params.motorRightNormal;
 			OCR0B = 0;			
 			break;
-		case MOTEUR_AVANT:
+		case MOTEUR_ARRIERE:
 			OCR0A = 0;
-			OCR0B = MOTEUR_VITESSE_NORMAL;
-			break;
-		case MOTEUR_ARRIERE_TURBO:
-			OCR0A = MOTEUR_VITESSE_TURBO;
-			OCR0B = 0;
+			OCR0B = params.motorRightNormal;
 			break;
 		case MOTEUR_AVANT_TURBO:
+			OCR0A = params.motorRightTurbo;
+			OCR0B = 0;
+			break;
+		case MOTEUR_ARRIERE_TURBO:
 			OCR0A = 0;
-			OCR0B = MOTEUR_VITESSE_TURBO;
+			OCR0B = params.motorRightTurbo;
 			break;
 		default:
 			status = 0;
 			break;
 		}
 	}
-	else
+	else /* Moteur droit */
 	{
-		switch (cmd)
+		switch (cmd) 
 		{
 		case MOTEUR_STOP:
 			OCR2A = 0xFF;
 			OCR2B = 0xFF;
 			break;
 		case MOTEUR_ARRIERE:
-			OCR2A = MOTEUR_VITESSE_NORMAL;
+			OCR2A = params.motorLeftNormal;
 			OCR2B = 0;			
 			break;
 		case MOTEUR_AVANT:
 			OCR2A = 0;
-			OCR2B = MOTEUR_VITESSE_NORMAL;
+			OCR2B = params.motorLeftNormal;
 			break;
 		case MOTEUR_ARRIERE_TURBO:
-			OCR2A = MOTEUR_VITESSE_TURBO;
+			OCR2A = params.motorLeftTurbo;
 			OCR2B = 0;
 			break;
 		case MOTEUR_AVANT_TURBO:
 			OCR2A = 0;
-			OCR2B = MOTEUR_VITESSE_TURBO;
+			OCR2B = params.motorLeftTurbo;
 			break;
 		default:
 			status = 0;

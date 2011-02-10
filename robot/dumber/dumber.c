@@ -26,6 +26,7 @@
 
 #include "uart.h"
 #include "timer.h"
+#include "eeprom.h"
 
 #include <stdio.h>
 
@@ -35,20 +36,45 @@ void allume_led(void);
 void eteint_led(void);
 char etat_detection_balle(void);
 
-char c;
 char buffer_cmd[32];
-char *ptr_cmd;
 
-char cmd_received;
+unsigned char motorLeftNormal;
+unsigned char motorRightNormal;
+unsigned char motorLeftTurbo;
+unsigned char motorRightTurbo;
 
-int moteur_droit, moteur_gauche;
-int odo_gauche, odo_droit;
+struct ST_EEPROM params;
 
 #define VBAT_SEUIL_ALERTE	0x88
 #define VBAT_SEUIL_STOP 	0x7C
 
+#define FW_MAJOR_VER		1
+#define FW_MINOR_VER		1
+
+/*
+ * Fonction: init_periph
+ * Initialise l'ensemble des peripheriques
+ * Param. entrée: Aucun
+ * Param. sortie: Aucun 
+ */ 
 void init_periph(void)
 {
+	/* Recuperation des parametres en EEPROM*/
+	e2p_init();
+	
+	e2p_read(0, sizeof(struct ST_EEPROM), (unsigned char*)&params);
+
+	if (params.eepromVer == 0xFF) /* la table est invalide: a initialiser */
+	{
+		params.eepromVer=1;
+		params.motorLeftNormal=0x35;
+		params.motorLeftTurbo=0x70;
+		params.motorRightNormal=0x35;
+		params.motorRightTurbo=0x70;
+
+		e2p_write (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
+	}
+	
 	uart_init();
 
 	timer_init();
@@ -56,8 +82,21 @@ void init_periph(void)
 	divers_init();
 }
 
+/*
+ * Fonction: main
+ * fonction principale
+ * Param. entrée: Aucun
+ * Param. sortie: Aucun (non utilisée)
+ */ 
 int main (void)
 {
+char c;
+char *ptr_cmd;
+char cmd_received;
+
+int moteur_droit, moteur_gauche;
+int odo_gauche, odo_droit;
+
 	init_periph();
 	
 	cmd_received= 0;
@@ -115,8 +154,8 @@ int main (void)
 					case 'm': /* motor command: set motor speed and dir */
 						if (sscanf (ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
 						{
-							if ((regle_moteur(1, moteur_droit)) && 
-							    (regle_moteur(2, moteur_gauche)))
+							if ((regle_moteur(1, moteur_gauche)) && 
+							    (regle_moteur(2, moteur_droit)))
 							{
 								printf ("O\n");
 							}
@@ -160,6 +199,32 @@ int main (void)
 						reset_WDT();
 						printf ("O\n");
 						break;
+					case 'V': /* return FW version */
+						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
+						break;
+					case 'S': /* set motors speed */
+						if (sscanf (ptr_cmd, "S=%i,%i,%i,%i", 
+						    &motorLeftNormal, &motorLeftTurbo,
+							&motorRightNormal, &motorRightTurbo)==4)
+						{
+							printf ("O\n");
+							
+							params.motorLeftNormal=motorLeftNormal;
+							params.motorLeftTurbo=motorLeftTurbo;
+							params.motorRightNormal=motorRightNormal;
+							params.motorRightTurbo=motorLeftNormal;
+						}
+						else
+						{
+							printf ("E\n");
+						}
+						break;
+					case 'R': /* record motors speed */
+						printf ("O\n");
+						e2p_write (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
+						break;
+					case 'l':
+						break;
 					default: /* unknown cmd */
 						printf ("C:%c\n",*ptr_cmd);	
 						break;
@@ -188,6 +253,9 @@ int main (void)
 					case 's': /* sensor cmd: return sensor state */	
 					case 'o': /* odometrie cmd: return odometrie */
 					case 'v': /* voltage cmd: return voltage state */
+					case 'V': /* return FW version */
+					case 'S': /* set motors speed */
+					case 'R': /* record motors speed */
 						printf ("E\n"); /* Commande non autorisée */
 						break;
 					default: /* unknown cmd */

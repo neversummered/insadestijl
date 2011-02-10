@@ -29,14 +29,16 @@
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
-            this.buttonEffacer = new System.Windows.Forms.Button();
-            this.buttonFermer = new System.Windows.Forms.Button();
             this.textBoxLog = new System.Windows.Forms.TextBox();
+            this.buttonFermer = new System.Windows.Forms.Button();
+            this.buttonEffacer = new System.Windows.Forms.Button();
+            this.checkBoxVerbose = new System.Windows.Forms.CheckBox();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.checkBoxVerbose);
             this.panel1.Controls.Add(this.textBoxLog);
             this.panel1.Controls.Add(this.buttonFermer);
             this.panel1.Controls.Add(this.buttonEffacer);
@@ -45,28 +47,6 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(292, 266);
             this.panel1.TabIndex = 0;
-            // 
-            // buttonEffacer
-            // 
-            this.buttonEffacer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonEffacer.Location = new System.Drawing.Point(3, 240);
-            this.buttonEffacer.Name = "buttonEffacer";
-            this.buttonEffacer.Size = new System.Drawing.Size(75, 23);
-            this.buttonEffacer.TabIndex = 0;
-            this.buttonEffacer.Text = "&Effacer";
-            this.buttonEffacer.UseVisualStyleBackColor = true;
-            this.buttonEffacer.Click += new System.EventHandler(this.buttonEffacer_Click);
-            // 
-            // buttonFermer
-            // 
-            this.buttonFermer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonFermer.Location = new System.Drawing.Point(214, 240);
-            this.buttonFermer.Name = "buttonFermer";
-            this.buttonFermer.Size = new System.Drawing.Size(75, 23);
-            this.buttonFermer.TabIndex = 1;
-            this.buttonFermer.Text = "&Fermer";
-            this.buttonFermer.UseVisualStyleBackColor = true;
-            this.buttonFermer.Click += new System.EventHandler(this.buttonFermer_Click);
             // 
             // textBoxLog
             // 
@@ -79,6 +59,42 @@
             this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.textBoxLog.Size = new System.Drawing.Size(286, 231);
             this.textBoxLog.TabIndex = 2;
+            this.textBoxLog.WordWrap = false;
+            // 
+            // buttonFermer
+            // 
+            this.buttonFermer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonFermer.Location = new System.Drawing.Point(214, 240);
+            this.buttonFermer.Name = "buttonFermer";
+            this.buttonFermer.Size = new System.Drawing.Size(75, 23);
+            this.buttonFermer.TabIndex = 1;
+            this.buttonFermer.Text = "&Fermer";
+            this.buttonFermer.UseVisualStyleBackColor = true;
+            this.buttonFermer.Click += new System.EventHandler(this.buttonFermer_Click);
+            // 
+            // buttonEffacer
+            // 
+            this.buttonEffacer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonEffacer.Location = new System.Drawing.Point(3, 240);
+            this.buttonEffacer.Name = "buttonEffacer";
+            this.buttonEffacer.Size = new System.Drawing.Size(75, 23);
+            this.buttonEffacer.TabIndex = 0;
+            this.buttonEffacer.Text = "&Effacer";
+            this.buttonEffacer.UseVisualStyleBackColor = true;
+            this.buttonEffacer.Click += new System.EventHandler(this.buttonEffacer_Click);
+            // 
+            // checkBoxVerbose
+            // 
+            this.checkBoxVerbose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxVerbose.AutoSize = true;
+            this.checkBoxVerbose.Checked = true;
+            this.checkBoxVerbose.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxVerbose.Location = new System.Drawing.Point(84, 244);
+            this.checkBoxVerbose.Name = "checkBoxVerbose";
+            this.checkBoxVerbose.Size = new System.Drawing.Size(65, 17);
+            this.checkBoxVerbose.TabIndex = 3;
+            this.checkBoxVerbose.Text = "Verbeux";
+            this.checkBoxVerbose.UseVisualStyleBackColor = true;
             // 
             // Log
             // 
@@ -101,5 +117,6 @@
         private System.Windows.Forms.TextBox textBoxLog;
         private System.Windows.Forms.Button buttonFermer;
         private System.Windows.Forms.Button buttonEffacer;
+        private System.Windows.Forms.CheckBox checkBoxVerbose;
     }
 }
