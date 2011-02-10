@@ -13,6 +13,10 @@ namespace Controleur_Robot
     {
         CtrlRobot ctrlRobot;
         Log log;
+        int FwMajorVer, FwMinorVer;
+
+        const int IhmMajorVer = 1;
+        const int IhmMinorVer = 1;
 
         public Principal()
         {
@@ -20,7 +24,7 @@ namespace Controleur_Robot
 
             log = new Log();
 
-            ctrlRobot = new CtrlRobot();
+            ctrlRobot = new CtrlRobot(log);
 
             DesactivationElements();
         }
@@ -40,7 +44,12 @@ namespace Controleur_Robot
             groupBox3.Enabled = true;
             groupBox4.Enabled = true;
             groupBox5.Enabled = true;
-            groupBox6.Enabled = true;
+
+            if ((FwMajorVer > 1) ||
+                ((FwMajorVer == 1) && (FwMinorVer >= 1)))
+            {
+                groupBox6.Enabled = true;
+            }
         }
 
         private void buttonDeplacement_Click(object sender, EventArgs e)
@@ -118,14 +127,19 @@ namespace Controleur_Robot
 
         private void buttonEnvoyer_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
-                 MessageBoxButtons.OK, MessageBoxIcon.Asterisk);  
+            /*MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
+                 MessageBoxButtons.OK, MessageBoxIcon.Asterisk);  */
+            ctrlRobot.SetMotorsSpeed(trackBarGaucheNormal.Value,
+                                     trackBarGaucheRapide.Value,
+                                     trackBarDroitNormal.Value,
+                                     trackBarDroitRapide.Value);
         }
 
         private void buttonEnregistrer_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
-                 MessageBoxButtons.OK, MessageBoxIcon.Asterisk);  
+            /*MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
+                 MessageBoxButtons.OK, MessageBoxIcon.Asterisk); */
+            ctrlRobot.RecordMotorsSpeed();
         }
 
         private void trackBarMoteurs_Scroll(object sender, EventArgs e)
@@ -150,33 +164,35 @@ namespace Controleur_Robot
         {
             string portname;
             string[] portlist;
+            CtrlRobot.OPENSTATUS status;
 
             if (ctrlRobot.IsOpen == false)
             {
                 portlist = SerialPort.GetPortNames();
                 portname = portlist[portlist.Length - 1];
-
+                
                 /* Ouverture du port et test de la presence du robot */
-                try
-                {
-                    ctrlRobot.Open(portname);
-                }
-                catch (TimeoutException)
+                status = ctrlRobot.Open(portname);
+                
+                if (status == CtrlRobot.OPENSTATUS.TimeoutErr)
                 {
                     MessageBox.Show("Aucun robot sur le port " + portname,
                                     "Erreur port serie", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 
                     return;
                 }
-                catch (Exception ex)
+
+                if (status == CtrlRobot.OPENSTATUS.ComErr)
                 {
-                    MessageBox.Show("Erreur lors de l'ouverture du port " + portname + "\r\nException: " + ex,
+                    MessageBox.Show("Erreur lors de l'ouverture du port " + portname + "\r\n",
                                    "Erreur port serie", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 
                     return;
                 }
 
-                /* Si tout s'est bien passé */
+                /* Si tout s'est bien passé, verification de la version du FW */
+                ctrlRobot.GetVersion(out FwMajorVer, out FwMinorVer);
+
                 ActivationElements();
 
                 labelConnecter.Text = "connecté (" + portname + ")";
@@ -195,7 +211,7 @@ namespace Controleur_Robot
             }
         }
 
-        private void parametresToolStripMenuItem_Click(object sender, EventArgs e)
+        private void updateToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
                  MessageBoxButtons.OK, MessageBoxIcon.Asterisk);  
@@ -203,10 +219,10 @@ namespace Controleur_Robot
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            /*MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
-                 MessageBoxButtons.OK, MessageBoxIcon.Asterisk);  */
             About about = new About();
 
+            about.SetVersionIHM(IhmMajorVer, IhmMinorVer);
+            about.SetVersionFW(FwMajorVer, FwMinorVer);
             about.Show();
         }
 

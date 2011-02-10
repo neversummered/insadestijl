@@ -15,6 +15,10 @@ namespace Controleur_Robot
         private const string CMD_GET_VBAT="v";
         private const string CMD_GET_ODO="o";
         private const string CMD_RESET="r";
+        private const string CMD_VERSION = "V";
+        private const string CMD_LED = "l";
+        private const string CMD_SET_MOTORS_SPEED = "S";
+        private const string CMD_RECORD_MOTORS_SPEED = "R";
 
         private const int MAX_RETRY = 3;
 
@@ -24,6 +28,8 @@ namespace Controleur_Robot
         private const char ANS_UNKNOWN_CMD_UPPERCASE='C';
         private const char ANS_INVALID_PARAMS='e';
         private const char ANS_INVALID_PARAMS_UPPERCASE='E';
+
+        private Log log;
 
         public enum MOTORS
         {
@@ -42,6 +48,21 @@ namespace Controleur_Robot
             Inconnu=-1
         };
 
+        public enum OPENSTATUS
+        { 
+            Success,
+            TimeoutErr,
+            ComErr
+        };
+
+        public enum CMD_STATUS
+        {
+            Success,
+            InvalidCmd,
+            InvalidParams,
+            Timeout
+        };
+
         public enum SENSOR
         {
             Inconnu=-1,
@@ -49,17 +70,44 @@ namespace Controleur_Robot
             Present=1
         };
 
-        new public void Open()
+        public CtrlRobot()
         {
-            Open(SerialPort.GetPortNames()[0]);
+            this.log = null;
         }
 
-        public void Open(string PortName)
+        public CtrlRobot(Log log)
         {
+            if (log != null)
+            {
+                this.log = log;
+            }
+        }
+
+        new public OPENSTATUS Open()
+        {
+            OPENSTATUS etat;
+
+            try
+            {
+                Open(SerialPort.GetPortNames()[0]);
+                etat = OPENSTATUS.Success;
+            }
+            catch (Exception)
+            {
+                etat = OPENSTATUS.ComErr;
+            }
+
+            return etat;
+        }
+
+        public OPENSTATUS Open(string PortName)
+        {
+            OPENSTATUS etat;
+
             base.NewLine = "\n";
             base.ReadBufferSize = 100;
             base.WriteBufferSize = 100;
-            base.ReadTimeout = 50;
+            base.ReadTimeout = 100;
             base.WriteTimeout = SerialPort.InfiniteTimeout;
 
             base.BaudRate = 9600;
@@ -67,10 +115,53 @@ namespace Controleur_Robot
             base.Parity = Parity.None;
             base.PortName = PortName;
 
-            base.Open();
+            try
+            {
+                base.Open();
 
-            // Test si un robot est bien present (commande ping)
-            Ping();
+                etat = OPENSTATUS.Success;
+
+                Print("Port " + PortName + " ouvert (" + Convert.ToString(DateTime.UtcNow) + ")");
+            }
+            catch (Exception)
+            {
+                etat = OPENSTATUS.ComErr;
+
+                Print("[ERR] Echec lors de l'ouverture du port " + PortName + " (" + Convert.ToString(DateTime.UtcNow) + ")");
+            }
+
+            if (etat == OPENSTATUS.Success)
+            {
+                // Test si un robot est bien present (commande ping)
+                if (Ping() != CMD_STATUS.Success)
+                {
+                    etat = OPENSTATUS.TimeoutErr;
+
+                    Print("[ERR] Echec lors de la recherche d'un robot sur le port " + PortName + " (" + Convert.ToString(DateTime.UtcNow) + ")");
+                    Close();
+                }
+            }
+
+            return etat;
+        }
+
+        public new void Close()
+        {
+            base.Close();
+
+            Print ("Port " + PortName + " fermé (" + Convert.ToString(DateTime.UtcNow) + ")");
+        }
+
+        /*
+         * Print
+         * Permet d'enregistrer le log des actions faites sur la liaison serie
+         */
+        private void Print(string text)
+        {
+            if (this.log != null)
+            {
+                log.WriteLine(text);
+            }
         }
 
         /*
@@ -78,20 +169,23 @@ namespace Controleur_Robot
          * Envoi une commande au robot
          * Forme 1 : Retourne la reponse
          */
-        private void SendCommand(string command, out string answer)
+        private CMD_STATUS SendCommand(string command, out string answer)
         {
 	        int nb_retry=0;
             bool cmd_succeed=false;
             string ans;
+            CMD_STATUS status = CMD_STATUS.Success;
 
             ans = "";
 
             do
             {
                 cmd_succeed = true;
+                DiscardInBuffer();
+                DiscardOutBuffer();
 
                 /* Envoi de la commande */
-                Console.WriteLine("Envoi de la commande: " + command);
+                Print("Envoi de la commande: " + command);
                 base.WriteLine(command);
 
                 /* Recuperation de la reponse */
@@ -102,7 +196,7 @@ namespace Controleur_Robot
                 catch (TimeoutException)
                 {
                     /* Probleme de timeout */
-                    Console.WriteLine("[ERR] Timeout lors de la reponse à la commande " + command);
+                    Print("[ERR] Timeout lors de la reponse à la commande " + command);
                     nb_retry++;
                     cmd_succeed = false;
                 }
@@ -111,33 +205,40 @@ namespace Controleur_Robot
 
 	        if (nb_retry >= MAX_RETRY)
 	        {
-		        throw new System.TimeoutException("La commande a dépassé son nombre maximal de re-essais");
+		        //throw new System.TimeoutException("La commande a dépassé son nombre maximal de re-essais");
+                Print("[ERR] Timeout: La commande a dépassé son nombre maximal de re-essais");
+                answer = ans;
+                return CMD_STATUS.Timeout;
 	        }
 
-            Console.WriteLine("Reponse recue: " + ans);
+            Print("Reponse recue: " + ans);
 
 	        /* Analyse de la reponse */
             switch (ans[0])
 	        {
 	        case ANS_UNKNOWN_CMD:
 	        case ANS_UNKNOWN_CMD_UPPERCASE:
-		        Console.WriteLine ("[ERR] Attention: commande inconnue ou non reconnue");
+		        Print ("[ERR] Attention: commande inconnue ou non reconnue");
+                status = CMD_STATUS.InvalidCmd;
 		        //throw new System.NotImplementedException("La commande " + command + " n'est pas supportée");
 		        break;
 	        case ANS_INVALID_PARAMS:
 	        case ANS_INVALID_PARAMS_UPPERCASE:
-		        Console.WriteLine ("[ERR] Attention: parametres invalides ou non reconnus");
+		        Print ("[ERR] Attention: parametres invalides ou non reconnus");
+                status = CMD_STATUS.InvalidParams;
 		        //throw new System.ArgumentException("Les parametres de la commande " + command + " ne sont pas valides");
 		        break;
 	        case ANS_OK:
 	        case ANS_OK_UPPERCASE:
-		        Console.WriteLine ("OK");
+		        Print ("OK");
 		        break;
 	        default:
 		        break;
 	        }
 
             answer = ans;
+
+            return status;
         }
 
         /*
@@ -145,19 +246,22 @@ namespace Controleur_Robot
          * Envoi une commande au robot
          * Forme 2 : Ne retourne pas la reponse
          */
-        private void SendCommand(string command)
+        private CMD_STATUS SendCommand(string command)
         {
 	        int nb_retry=0;
             bool cmd_succeed=true;
+            CMD_STATUS status=CMD_STATUS.Success;
 
             string answer="";
 
 	        do
 	        {
                 cmd_succeed = true;
+                DiscardInBuffer();
+                DiscardOutBuffer();
 
 		        /* Envoi de la commande */
-                Console.WriteLine("Envoi de la commande: " + command);
+                Print("Envoi de la commande: " + command);
                 base.WriteLine(command);
                 
                 /* Recuperation de la reponse */
@@ -168,7 +272,7 @@ namespace Controleur_Robot
                 catch (TimeoutException)
                 {
                     /* Probleme de timeout */
-                    Console.WriteLine("[ERR] Timeout lors de la reponse à la commande " + command); 
+                    Print("[ERR] Timeout lors de la reponse à la commande " + command); 
                     nb_retry ++;
                     cmd_succeed = false;
                 }
@@ -177,119 +281,87 @@ namespace Controleur_Robot
 
 	        if (nb_retry >= MAX_RETRY)
 	        {
-		        throw new System.TimeoutException("La commande a dépassé son nombre maximal de re-essais");
+		        //throw new System.TimeoutException("La commande a dépassé son nombre maximal de re-essais");
+                Print("[ERR] Timeout: La commande a dépassé son nombre maximal de re-essais");
+                return CMD_STATUS.Timeout;
 	        }
 
-	        Console.WriteLine ("reponse recue: " + answer);
+	        Print ("reponse recue: " + answer);
 
 	        /* Analyse de la reponse */
 	        switch (answer[0])
 	        {
 	        case ANS_UNKNOWN_CMD:
 	        case ANS_UNKNOWN_CMD_UPPERCASE:
-		        Console.WriteLine ("[ERR] Attention: commande inconnue ou non reconnue");
+		        Print ("[ERR] Attention: commande inconnue ou non reconnue");
+                status = CMD_STATUS.InvalidCmd;
 		        //throw new System.NotImplementedException("La commande " + command + " n'est pas supportée");
 		        break;
 	        case ANS_INVALID_PARAMS:
 	        case ANS_INVALID_PARAMS_UPPERCASE:
-		        Console.WriteLine ("[ERR] Attention: parametres invalides ou non reconnus");
+		        Print ("[ERR] Attention: parametres invalides ou non reconnus");
+                status = CMD_STATUS.InvalidParams;
 		        //throw new System.ArgumentException("Les parametres de la commande " + command + " ne sont pas valides");
 		        break;
 	        case ANS_OK:
 	        case ANS_OK_UPPERCASE:
-		        Console.WriteLine ("OK");
+		        Print ("OK");
 		        break;
 	        default:
 		        break;
 	        }
+
+            return status;
         }
 
         /*
          * Commande PING
          * Teste la presence du robot
          */
-        public void Ping()
+        public CMD_STATUS Ping()
         {
-            SendCommand(CMD_PING);  
+            return SendCommand(CMD_PING);  
         }
 
         /*
          * Commande START_WATCHDOG
          * Demarre le watchdog du robot (et fait clignoter la led)
          */
-        public void Start()
+        public CMD_STATUS Start()
         {
-	        SendCommand(CMD_START_WATCHDOG);
+	        return SendCommand(CMD_START_WATCHDOG);
         }
 
         /*
          * Commande RESET
          * Arrete le watchdog du robot (et allume la led en continu)
          */
-        public void Stop()
+        public CMD_STATUS Stop()
         {
-            SendCommand(CMD_RESET);
+            return SendCommand(CMD_RESET);
         }
 
         /*
          * Commande SET_MOTORS
          * Commande les moteurs
          */
-        public void SetMotors(MOTORS moteurGauche, MOTORS moteurDroit)
+        public CMD_STATUS SetMotors(MOTORS moteurGauche, MOTORS moteurDroit)
         {
             int valMoteurGauche, valMoteurDroit;
 
-            valMoteurGauche = 0;
-            valMoteurDroit = 0;
+            valMoteurGauche = Convert.ToInt32(moteurGauche);
+            valMoteurDroit = Convert.ToInt32(moteurDroit);
 
-            switch (moteurGauche)
-            {
-                case MOTORS.Arret:
-                    valMoteurGauche = 0;
-                    break;
-                case MOTORS.ArriereNormal:
-                    valMoteurGauche = -1;
-                    break;
-                case MOTORS.ArriereRapide:
-                    valMoteurGauche = -2;
-                    break;
-                case MOTORS.AvantNormal:
-                    valMoteurGauche = 1;
-                    break;
-                case MOTORS.AvantRapide:
-                    valMoteurGauche = 2;
-                    break;
-            }
-
-            switch (moteurDroit)
-            {
-                case MOTORS.Arret:
-                    valMoteurDroit = 0;
-                    break;
-                case MOTORS.ArriereNormal:
-                    valMoteurDroit = -1;
-                    break;
-                case MOTORS.ArriereRapide:
-                    valMoteurDroit = -2;
-                    break;
-                case MOTORS.AvantNormal:
-                    valMoteurDroit = 1;
-                    break;
-                case MOTORS.AvantRapide:
-                    valMoteurDroit = 2;
-                    break;
-            }
-
-            SendCommand(CMD_SET_MOTORS + "=" + valMoteurGauche + "," + valMoteurDroit);
+            return SendCommand(CMD_SET_MOTORS + "=" + valMoteurGauche + "," + valMoteurDroit);
         }
 
         /*
          * Commande CMD_RELOAD_WATCHDOG
          * Relacne le Watchdog
          */
-        public void ReloadWdt()
+        public CMD_STATUS ReloadWdt()
         {
-            SendCommand(CMD_RELOAD_WATCHDOG);
+            return SendCommand(CMD_RELOAD_WATCHDOG);
         }
 
         /*
@@ -304,18 +376,23 @@ namespace Controleur_Robot
 
             int valeur;
 
-            SendCommand(CMD_GET_SENSOR, out answer);
-
-            items = answer.Split(':');
-
-            try
+            if (SendCommand(CMD_GET_SENSOR, out answer)== CMD_STATUS.Success)
             {
-                valeur = Convert.ToInt32(items[1]);
+                items = answer.Split(':');
+
+                try
+                {
+                    valeur = Convert.ToInt32(items[1]);
+                }
+                catch (Exception e)
+                {
+                    Print("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
+                    valeur = -1;
+                }
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
-                valeur =-1;
+                valeur = -1;
             }
 
             switch (valeur)
@@ -331,7 +408,7 @@ namespace Controleur_Robot
                     break;
                 default:
                     //throw new System.ArgumentException("Reponse inconnue: " + answer);
-                    Console.WriteLine("[ERR] Attention: reponse inconnue (" + answer + ")");
+                    Print("[ERR] Attention: reponse inconnue (" + answer + ")");
                     etat = SENSOR.Inconnu;
                     break;
             }
@@ -348,20 +425,24 @@ namespace Controleur_Robot
             string answer;
             string[] items;
 
-            SendCommand(CMD_GET_ODO, out answer);
+            odometrieGauche = 0;
+            odometrieDroite = 0;
 
-            items = answer.Split(new Char[] { ':', ','});
+            if (SendCommand(CMD_GET_ODO, out answer) == CMD_STATUS.Success)
+            {
+                items = answer.Split(new Char[] { ':', ',' });
 
-            try
-            {
-                odometrieGauche = Convert.ToInt32(items[1]);
-                odometrieDroite = Convert.ToInt32(items[2]);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
-                odometrieGauche = 0;
-                odometrieDroite = 0;
+                try
+                {
+                    odometrieGauche = Convert.ToInt32(items[1]);
+                    odometrieDroite = Convert.ToInt32(items[2]);
+                }
+                catch (Exception e)
+                {
+                    Print("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
+                    odometrieGauche = 0;
+                    odometrieDroite = 0;
+                }
             }
         }
 
@@ -376,17 +457,22 @@ namespace Controleur_Robot
             int valeur;
             VBAT etat;
 
-            SendCommand(CMD_GET_VBAT, out answer);
-
-            items = answer.Split(':');
-
-            try
+            if (SendCommand(CMD_GET_VBAT, out answer) == CMD_STATUS.Success)
             {
-                valeur = Convert.ToInt32(items[1]);
+                items = answer.Split(':');
+
+                try
+                {
+                    valeur = Convert.ToInt32(items[1]);
+                }
+                catch (Exception e)
+                {
+                    Print("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
+                    valeur = -1;
+                }
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
                 valeur = -1;
             }
 
@@ -406,12 +492,79 @@ namespace Controleur_Robot
                     break;
                 default:
                     //throw new System.ArgumentException("Reponse inconnue: " + answer);
-                    Console.WriteLine("[ERR] Attention: Reponse inconnue (" + answer + ")");
+                    Print("[ERR] Attention: Reponse inconnue (" + answer + ")");
                     etat = VBAT.Inconnu;
                     break;
             }
 
             return etat;
+        }
+
+        /*
+         * Commande CMD_GET_VERSION
+         * Recupere le numero de version du firmware du robot
+         */
+        public void GetVersion(out int versionMajor, out int versionMinor)
+        {
+            string answer;
+            string[] items;
+
+            if (SendCommand(CMD_VERSION, out answer) == CMD_STATUS.Success)
+            {
+                items = answer.Split(new char[]{':',','});
+
+                try
+                {
+                    versionMajor = Convert.ToInt32(items[1]);
+                    versionMinor = Convert.ToInt32(items[2]);
+                }
+                catch (Exception e)
+                {
+                    Print("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
+                    versionMajor = -1;
+                    versionMinor = -1;
+                }
+            }
+            else
+            {
+                versionMajor = -1;
+                versionMinor = -1;
+            }
+        }
+
+        /*
+         * Commande CMD_SET_MOTORS_SPEED
+         * Regle les vitesses de rotation des moteurs
+         */
+        public CMD_STATUS SetMotorsSpeed(int motorLeftNormal, int motorLeftTurbo,
+                                         int motorRightNormal, int motorRightTurbo)
+        {
+            if ((motorLeftNormal < 0) || (motorLeftTurbo < 0) ||
+                (motorRightNormal < 0) || (motorRightTurbo < 0))
+            {
+                throw new System.ArgumentOutOfRangeException();
+            }
+
+            if ((motorLeftNormal > 255) || (motorLeftTurbo > 255) ||
+                (motorRightNormal > 255) || (motorRightTurbo > 255))
+            {
+                throw new System.ArgumentOutOfRangeException();
+            }
+
+            return SendCommand(CMD_SET_MOTORS_SPEED + "=" + 
+                               motorLeftNormal + "," +
+                               motorLeftTurbo + "," +
+                               motorRightNormal + "," +
+                               motorRightTurbo); 
+        }
+
+        /*
+         * Commande CMD_RECORD_MOTORS_SPEED
+         * Enregistre les vitesses de rotation des moteurs
+         */
+        public CMD_STATUS RecordMotorsSpeed()
+        {
+            return SendCommand(CMD_RECORD_MOTORS_SPEED);
         }
     }
 }

@@ -34,6 +34,9 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.labelFwVersion = new System.Windows.Forms.Label();
+            this.labelIHMVersion = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -73,24 +76,53 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(194, 56);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(66, 13);
+            this.label2.Size = new System.Drawing.Size(68, 13);
             this.label2.TabIndex = 3;
-            this.label2.Text = "Version 1.00";
+            this.label2.Text = "Version IHM:";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(194, 87);
+            this.label3.Location = new System.Drawing.Point(196, 105);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(173, 13);
             this.label3.TabIndex = 4;
             this.label3.Text = "S. DI MERCURIO (INSA Toulouse)";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(196, 78);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(65, 13);
+            this.label4.TabIndex = 5;
+            this.label4.Text = "FW Version:";
+            // 
+            // labelFwVersion
+            // 
+            this.labelFwVersion.AutoSize = true;
+            this.labelFwVersion.Location = new System.Drawing.Point(268, 78);
+            this.labelFwVersion.Name = "labelFwVersion";
+            this.labelFwVersion.Size = new System.Drawing.Size(46, 13);
+            this.labelFwVersion.TabIndex = 6;
+            this.labelFwVersion.Text = "Inconnu";
+            // 
+            // labelIHMVersion
+            // 
+            this.labelIHMVersion.AutoSize = true;
+            this.labelIHMVersion.Location = new System.Drawing.Point(268, 56);
+            this.labelIHMVersion.Name = "labelIHMVersion";
+            this.labelIHMVersion.Size = new System.Drawing.Size(0, 13);
+            this.labelIHMVersion.TabIndex = 7;
             // 
             // About
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(381, 191);
+            this.Controls.Add(this.labelIHMVersion);
+            this.Controls.Add(this.labelFwVersion);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -116,5 +148,8 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label labelFwVersion;
+        private System.Windows.Forms.Label labelIHMVersion;
     }
 }

@@ -31,7 +31,8 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Principal));
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.parametresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.logToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.buttonConnecter = new System.Windows.Forms.Button();
@@ -79,7 +80,6 @@
             this.trackBarGaucheNormal = new System.Windows.Forms.TrackBar();
             this.timerCommande = new System.Windows.Forms.Timer(this.components);
             this.timerWatchdog = new System.Windows.Forms.Timer(this.components);
-            this.logToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -97,7 +97,7 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.parametresToolStripMenuItem,
+            this.updateToolStripMenuItem,
             this.logToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
@@ -106,12 +106,19 @@
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
-            // parametresToolStripMenuItem
+            // updateToolStripMenuItem
             // 
-            this.parametresToolStripMenuItem.Name = "parametresToolStripMenuItem";
-            this.parametresToolStripMenuItem.Size = new System.Drawing.Size(74, 20);
-            this.parametresToolStripMenuItem.Text = "&Parametres";
-            this.parametresToolStripMenuItem.Click += new System.EventHandler(this.parametresToolStripMenuItem_Click);
+            this.updateToolStripMenuItem.Name = "updateToolStripMenuItem";
+            this.updateToolStripMenuItem.Size = new System.Drawing.Size(90, 20);
+            this.updateToolStripMenuItem.Text = "&Mise à jour FW";
+            this.updateToolStripMenuItem.Click += new System.EventHandler(this.updateToolStripMenuItem_Click);
+            // 
+            // logToolStripMenuItem
+            // 
+            this.logToolStripMenuItem.Name = "logToolStripMenuItem";
+            this.logToolStripMenuItem.Size = new System.Drawing.Size(36, 20);
+            this.logToolStripMenuItem.Text = "&Log";
+            this.logToolStripMenuItem.Click += new System.EventHandler(this.logToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
@@ -585,13 +592,6 @@
             // 
             this.timerWatchdog.Tick += new System.EventHandler(this.timerWatchdog_Tick);
             // 
-            // logToolStripMenuItem
-            // 
-            this.logToolStripMenuItem.Name = "logToolStripMenuItem";
-            this.logToolStripMenuItem.Size = new System.Drawing.Size(36, 20);
-            this.logToolStripMenuItem.Text = "&Log";
-            this.logToolStripMenuItem.Click += new System.EventHandler(this.logToolStripMenuItem_Click);
-            // 
             // Principal
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -637,7 +637,7 @@
         #endregion
 
         private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem parametresToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button buttonConnecter;
