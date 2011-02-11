@@ -26,7 +26,7 @@
 #include "uart.h"
 
 unsigned char UART_RX_Buffer[UART_RX_BUFFER_SIZE];
-unsigned char UART_RX_BufferIndex;
+register unsigned char UART_RX_BufferIndex asm ("r12");
 unsigned char UART_RX_BufferLength;
 
 #define MYUBRR (((F_CPU/16/UART_BAUDRATE-1)*2)+1)
@@ -44,7 +44,6 @@ void uart_init(void)
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0);
 	/* Set frame format: 8data, 1stop bit */
 	UCSR0C = (3<<UCSZ00);
-
 } 
 
 void UartPutchar(char c)
@@ -65,20 +64,15 @@ char tmp;
 	if (UART_RX_BufferLength!=0)
 	{
 		tmp =UART_RX_Buffer[UART_RX_BufferIndex];
-		
+
 		UART_RX_BufferIndex++;
 		UART_RX_BufferLength--;
-		if (UART_RX_BufferIndex>UART_RX_BUFFER_SIZE) UART_RX_BufferIndex =0;	
+
+		if (UART_RX_BufferIndex>UART_RX_BUFFER_SIZE) UART_RX_BufferIndex =0;
 	}
 
 	return tmp;
-
 }
-
-char UartGetBufferSize(void)
-{
-	return UART_RX_BufferLength;
-} 
 
 ISR(SIG_USART_RECV, ISR_BLOCK)
 {

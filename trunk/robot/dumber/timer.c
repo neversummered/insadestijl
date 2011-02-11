@@ -31,9 +31,9 @@ void callback_activite(void);
 #define MOTEUR_VITESSE_NORMAL	0x35
 #define MOTEUR_VITESSE_TURBO	0x70
 
-char WDT_demarre;
+register char WDT_demarre asm("r11");
 unsigned int WDT_compteur;
-char WDT_etat;
+register char WDT_etat asm ("r10");
 
 #define SEUIL_MIN_WDT	3600 /* 100 ms */
 #define SEUIL_MAX_WDT   4320 /* 120 ms */
