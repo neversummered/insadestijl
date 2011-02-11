@@ -48,7 +48,21 @@ namespace Controleur_Robot
             if ((FwMajorVer > 1) ||
                 ((FwMajorVer == 1) && (FwMinorVer >= 1)))
             {
+                int motorLeftNormal, motorLeftTurbo, motorRightNormal, motorRightTurbo;
+ 
                 groupBox6.Enabled = true;
+
+                ctrlRobot.GetParams(out motorLeftNormal, out motorLeftTurbo, out motorRightNormal, out motorRightTurbo);
+
+                trackBarGaucheNormal.Value = motorLeftNormal;
+                trackBarGaucheRapide.Value = motorLeftTurbo;
+                trackBarDroitNormal.Value = motorRightNormal;
+                trackBarDroitRapide.Value = motorRightTurbo;
+
+                labelGaucheNormal.Text = Convert.ToString(motorLeftNormal);
+                labelGaucheRapide.Text = Convert.ToString(motorLeftTurbo);
+                labelDroitNormal.Text = Convert.ToString(motorRightNormal);
+                labelDroitRapid.Text = Convert.ToString(motorRightTurbo);
             }
         }
 
@@ -139,7 +153,7 @@ namespace Controleur_Robot
         {
             /*MessageBox.Show("Ne soit pas aussi impatient, petit scarabée !", "Fonction non implementée",
                  MessageBoxButtons.OK, MessageBoxIcon.Asterisk); */
-            ctrlRobot.RecordMotorsSpeed();
+            ctrlRobot.RecordParams();
         }
 
         private void trackBarMoteurs_Scroll(object sender, EventArgs e)
