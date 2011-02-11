@@ -1,0 +1,2 @@
+@ECHO OFF
+"C:\Program Files\Atmel\AVR Tools\AvrAssembler2\avrasm2.exe" -S "C:\Home\insadestijl\robot\bootloader\labels.tmp" -fI -W+ie -C V2E -o "C:\Home\insadestijl\robot\bootloader\bootloader.hex" -d "C:\Home\insadestijl\robot\bootloader\bootloader.obj" -e "C:\Home\insadestijl\robot\bootloader\bootloader.eep" -m "C:\Home\insadestijl\robot\bootloader\bootloader.map" "C:\Home\insadestijl\robot\bootloader\bootloader.asm"
