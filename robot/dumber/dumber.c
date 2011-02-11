@@ -36,7 +36,12 @@ void allume_led(void);
 void eteint_led(void);
 char etat_detection_balle(void);
 
-char buffer_cmd[32];
+unsigned char buffer_cmd[32];
+
+#define MOTOR_LEFT_NORMAL 1
+#define MOTOR_LEFT_TURBO 2
+#define MOTOR_RIGHT_NORMAL 3
+#define MOTOR_RIGHT_TURBO 4
 
 unsigned char motorLeftNormal;
 unsigned char motorRightNormal;
@@ -50,6 +55,22 @@ struct ST_EEPROM params;
 
 #define FW_MAJOR_VER		1
 #define FW_MINOR_VER		1
+
+#define CMD_PING 				'p'
+#define CMD_RESET				'r'
+#define CMD_SET_MOTORS			'm'
+#define CMD_START_WATCHDOG		'W'
+#define CMD_RESET_WATCHDOG  	'w'
+#define CMD_GET_SENSOR 			's'
+#define CMD_GET_ODO				'o'
+#define CMD_GET_VBAT			'v'
+#define CMD_GET_VERSION			'V'
+#define CMD_SET_LEFT_NORMAL		'Y'
+#define CMD_SET_LEFT_TURBO		'y'
+#define CMD_SET_RIGHT_NORMAL	'Z'
+#define CMD_SET_RIGHT_TURBO		'z'
+#define CMD_RECORD_PARAMS		'R'
+#define CMD_GET_PARAMS			'G'
 
 /*
  * Fonction: init_periph
@@ -90,9 +111,9 @@ void init_periph(void)
  */ 
 int main (void)
 {
-char c;
-char *ptr_cmd;
-char cmd_received;
+unsigned char c;
+unsigned char *ptr_cmd;
+unsigned char cmd_received;
 
 int moteur_droit, moteur_gauche;
 int odo_gauche, odo_droit;
@@ -148,14 +169,14 @@ int odo_gauche, odo_droit;
 			{
 				switch (*ptr_cmd)
 				{
-					case 'p': /* ping command: check if robot is on */
+					case CMD_PING: /* ping command: check if robot is on */
 						printf ("O\n");
 						break;
-					case 'm': /* motor command: set motor speed and dir */
-						if (sscanf (ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
+					case CMD_SET_MOTORS: /* motor command: set motor speed and dir */
+						if (sscanf ((char *)ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
 						{
-							if ((regle_moteur(1, moteur_gauche)) && 
-							    (regle_moteur(2, moteur_droit)))
+							if ((regle_moteur(MOTEUR_GAUCHE, moteur_gauche)) && 
+							    (regle_moteur(MOTEUR_DROIT, moteur_droit)))
 							{
 								printf ("O\n");
 							}
@@ -166,11 +187,11 @@ int odo_gauche, odo_droit;
 							printf ("E\n");
 						} 
 						break;
-					case 'W': /* start watchdog */
+					case CMD_START_WATCHDOG: /* start watchdog */
 						demarre_WDT();
 						printf ("O\n");
 						break;
-					case 'w': /* reset watchdog */
+					case CMD_RESET_WATCHDOG: /* reset watchdog */
 						if (acquite_WDT() == WDT_ETAT_INACTIF)
 						{
 							printf ("E\n");
@@ -180,18 +201,18 @@ int odo_gauche, odo_droit;
 							printf ("O\n");
 						}
 						break;
-					case 's': /* sensor cmd: return sensor state */
+					case CMD_GET_SENSOR: /* sensor cmd: return sensor state */
 						printf ("O:%d\n",etat_detection_balle());
 						break;
-					case 'o': /* odometrie cmd: return odometrie */
+					case CMD_GET_ODO: /* odometrie cmd: return odometrie */
 						printf ("O:%d,%d\n", odo_gauche, odo_droit);
 						break;
-					case 'v': /* voltage cmd: return voltage state */
+					case CMD_GET_VBAT: /* voltage cmd: return voltage state */
 						printf ("O:%d\n", etat_vbat());
 						break;
-					case 'r': /* reset system */
-						regle_moteur(1, MOTEUR_STOP);
-						regle_moteur(2, MOTEUR_STOP);
+					case CMD_RESET: /* reset system */
+						regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
+						regle_moteur(MOTEUR_DROIT, MOTEUR_STOP);
 						
 						odo_gauche=0;
 						odo_droit=0;
@@ -199,31 +220,56 @@ int odo_gauche, odo_droit;
 						reset_WDT();
 						printf ("O\n");
 						break;
-					case 'V': /* return FW version */
+					case CMD_GET_VERSION: /* return FW version */
 						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
 						break;
-					case 'S': /* set motors speed */
-						if (sscanf (ptr_cmd, "S=%i,%i,%i,%i", 
-						    &motorLeftNormal, &motorLeftTurbo,
-							&motorRightNormal, &motorRightTurbo)==4)
+					case CMD_SET_LEFT_NORMAL: /* set motor left speed normal*/
+						if (sscanf ((char *)ptr_cmd, "Y=%i", &params.motorLeftNormal)==1)
 						{
 							printf ("O\n");
-							
-							params.motorLeftNormal=motorLeftNormal;
-							params.motorLeftTurbo=motorLeftTurbo;
-							params.motorRightNormal=motorRightNormal;
-							params.motorRightTurbo=motorLeftNormal;
 						}
 						else
 						{
 							printf ("E\n");
 						}
 						break;
-					case 'R': /* record motors speed */
+					case CMD_SET_LEFT_TURBO: /* set motor left speed turbo */
+						if (sscanf ((char *)ptr_cmd, "y=%i", &params.motorLeftTurbo)==1)
+						{
+							printf ("O\n");
+						}
+						else
+						{
+							printf ("E\n");
+						}
+						break;
+					case CMD_SET_RIGHT_NORMAL: /* set motor right speed normal*/
+						if (sscanf ((char *)ptr_cmd, "Z=%i", &params.motorRightNormal)==1)
+						{
+							printf ("O\n");
+						}
+						else
+						{
+							printf ("E\n");
+						}
+						break;
+					case CMD_SET_RIGHT_TURBO: /* set motor right speed turbo*/
+						if (sscanf ((char *)ptr_cmd, "z=%i", &params.motorRightTurbo)==1)
+						{
+							printf ("O\n");	
+						}
+						else
+						{
+							printf ("E\n");
+						}
+						break;	
+					case CMD_RECORD_PARAMS: /* record params */
 						printf ("O\n");
 						e2p_write (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
 						break;
-					case 'l':
+					case CMD_GET_PARAMS:
+						printf ("O:%u,%u,%u,%u\n",params.motorLeftNormal,params.motorLeftTurbo,
+						                          params.motorRightNormal,params.motorRightTurbo);
 						break;
 					default: /* unknown cmd */
 						printf ("C:%c\n",*ptr_cmd);	
@@ -234,12 +280,12 @@ int odo_gauche, odo_droit;
 			{
 				switch (*ptr_cmd)
 				{
-					case 'p': /* ping command: check if robot is on */
+					case CMD_PING: /* ping command: check if robot is on */
 						printf ("O\n");
 						break;
-					case 'r': /* reset system */
-						regle_moteur(1, MOTEUR_STOP);
-						regle_moteur(2, MOTEUR_STOP);
+					case CMD_RESET: /* reset system */
+						regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
+						regle_moteur(MOTEUR_DROIT, MOTEUR_STOP);
 						
 						odo_gauche=0;
 						odo_droit=0;
@@ -247,15 +293,19 @@ int odo_gauche, odo_droit;
 						reset_WDT();
 						printf ("O\n");
 						break;
-					case 'm': /* motor command: set motor speed and dir */
-					case 'W': /* start watchdog */
-					case 'w': /* reset watchdog */
-					case 's': /* sensor cmd: return sensor state */	
-					case 'o': /* odometrie cmd: return odometrie */
-					case 'v': /* voltage cmd: return voltage state */
-					case 'V': /* return FW version */
-					case 'S': /* set motors speed */
-					case 'R': /* record motors speed */
+					case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
+					case CMD_START_WATCHDOG: 	/* start watchdog */
+					case CMD_RESET_WATCHDOG: 	/* reset watchdog */
+					case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
+					case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
+					case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
+					case CMD_GET_VERSION: 		/* return FW version */
+					case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
+					case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
+					case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
+					case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
+					case CMD_RECORD_PARAMS: 	/* record params */
+					case CMD_GET_PARAMS:		/* get params */
 						printf ("E\n"); /* Commande non autorisée */
 						break;
 					default: /* unknown cmd */

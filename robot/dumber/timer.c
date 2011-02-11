@@ -150,7 +150,7 @@ char regle_moteur(char moteur, signed char cmd)
 {
 char status = 1;
 
-	if (moteur == 1) /* Moteur gauche */
+	if (moteur == MOTEUR_GAUCHE) 
 	{
 		switch (cmd)
 		{
@@ -159,27 +159,27 @@ char status = 1;
 			OCR0B = 0xFF;
 			break;
 		case MOTEUR_AVANT:
-			OCR0A = params.motorRightNormal;
+			OCR0A = params.motorLeftNormal;
 			OCR0B = 0;			
 			break;
 		case MOTEUR_ARRIERE:
 			OCR0A = 0;
-			OCR0B = params.motorRightNormal;
+			OCR0B = params.motorLeftNormal;
 			break;
 		case MOTEUR_AVANT_TURBO:
-			OCR0A = params.motorRightTurbo;
+			OCR0A = params.motorLeftTurbo;
 			OCR0B = 0;
 			break;
 		case MOTEUR_ARRIERE_TURBO:
 			OCR0A = 0;
-			OCR0B = params.motorRightTurbo;
+			OCR0B = params.motorLeftTurbo;
 			break;
 		default:
 			status = 0;
 			break;
 		}
 	}
-	else /* Moteur droit */
+	else /* Moteur Droit */
 	{
 		switch (cmd) 
 		{
@@ -188,20 +188,20 @@ char status = 1;
 			OCR2B = 0xFF;
 			break;
 		case MOTEUR_ARRIERE:
-			OCR2A = params.motorLeftNormal;
+			OCR2A = params.motorRightNormal;
 			OCR2B = 0;			
 			break;
 		case MOTEUR_AVANT:
 			OCR2A = 0;
-			OCR2B = params.motorLeftNormal;
+			OCR2B = params.motorRightNormal;
 			break;
 		case MOTEUR_ARRIERE_TURBO:
-			OCR2A = params.motorLeftTurbo;
+			OCR2A = params.motorRightTurbo;
 			OCR2B = 0;
 			break;
 		case MOTEUR_AVANT_TURBO:
 			OCR2A = 0;
-			OCR2B = params.motorLeftTurbo;
+			OCR2B = params.motorRightTurbo;
 			break;
 		default:
 			status = 0;

@@ -17,8 +17,12 @@ namespace Controleur_Robot
         private const string CMD_RESET="r";
         private const string CMD_VERSION = "V";
         private const string CMD_LED = "l";
-        private const string CMD_SET_MOTORS_SPEED = "S";
-        private const string CMD_RECORD_MOTORS_SPEED = "R";
+        private const string CMD_SET_MOTORS_LEFT_SPEED_NORMAL = "Y";
+        private const string CMD_SET_MOTORS_LEFT_SPEED_TURBO = "y";
+        private const string CMD_SET_MOTORS_RIGHT_SPEED_NORMAL = "Z";
+        private const string CMD_SET_MOTORS_RIGHT_SPEED_TURBO = "z";
+        private const string CMD_RECORD_PARAMS = "R";
+        private const string CMD_GET_PARAMS = "G";
 
         private const int MAX_RETRY = 3;
 
@@ -539,6 +543,10 @@ namespace Controleur_Robot
         public CMD_STATUS SetMotorsSpeed(int motorLeftNormal, int motorLeftTurbo,
                                          int motorRightNormal, int motorRightTurbo)
         {
+            CMD_STATUS status;
+            int re_essai = -1;
+            const int MAX_RE_ESSAI = 3;
+
             if ((motorLeftNormal < 0) || (motorLeftTurbo < 0) ||
                 (motorRightNormal < 0) || (motorRightTurbo < 0))
             {
@@ -551,20 +559,89 @@ namespace Controleur_Robot
                 throw new System.ArgumentOutOfRangeException();
             }
 
-            return SendCommand(CMD_SET_MOTORS_SPEED + "=" + 
-                               motorLeftNormal + "," +
-                               motorLeftTurbo + "," +
-                               motorRightNormal + "," +
-                               motorRightTurbo); 
+            do
+            {
+                status=SendCommand(CMD_SET_MOTORS_LEFT_SPEED_NORMAL + "=" + motorLeftNormal);
+            }
+            while ((re_essai<MAX_RE_ESSAI) && 
+                   ((status == CMD_STATUS.InvalidCmd) || (status == CMD_STATUS.InvalidParams)));
+
+            if (status != CMD_STATUS.Success) return status;
+
+            do
+            {
+                status=SendCommand(CMD_SET_MOTORS_LEFT_SPEED_TURBO + "=" + motorLeftTurbo);
+            }
+            while ((re_essai<MAX_RE_ESSAI) && 
+                   ((status == CMD_STATUS.InvalidCmd) || (status == CMD_STATUS.InvalidParams)));
+
+            if (status != CMD_STATUS.Success) return status;
+
+            do
+            {
+                status=SendCommand(CMD_SET_MOTORS_RIGHT_SPEED_NORMAL + "=" + motorRightNormal);
+            }
+            while ((re_essai<MAX_RE_ESSAI) && 
+                   ((status == CMD_STATUS.InvalidCmd) || (status == CMD_STATUS.InvalidParams)));
+
+            if (status != CMD_STATUS.Success) return status;
+
+            do
+            {
+                status=SendCommand(CMD_SET_MOTORS_RIGHT_SPEED_TURBO + "=" + motorRightTurbo);
+            }
+            while ((re_essai<MAX_RE_ESSAI) && 
+                   ((status == CMD_STATUS.InvalidCmd) || (status == CMD_STATUS.InvalidParams)));
+
+            return status;
         }
 
         /*
-         * Commande CMD_RECORD_MOTORS_SPEED
-         * Enregistre les vitesses de rotation des moteurs
+         * Commande CMD_RECORD_PARAMS
+         * Enregistre les parametres en EEPROM
          */
-        public CMD_STATUS RecordMotorsSpeed()
+        public CMD_STATUS RecordParams()
         {
-            return SendCommand(CMD_RECORD_MOTORS_SPEED);
+            return SendCommand(CMD_RECORD_PARAMS);
+        }
+
+        /*
+         * commande CMD_GET_PARAMS
+         * Recupere l'etat actuel des parametres
+         */
+        public void GetParams(out int motorLeftNormal, out int motorLeftTurbo,
+                              out int motorRightNormal, out int motorRightTurbo)
+        {
+            string answer;
+            string[] items;
+
+            if (SendCommand(CMD_GET_PARAMS, out answer) == CMD_STATUS.Success)
+            {
+                items = answer.Split(new char[] { ':', ',' });
+
+                try
+                {
+                    motorLeftNormal = Convert.ToInt32(items[1]);
+                    motorLeftTurbo = Convert.ToInt32(items[2]);
+                    motorRightNormal = Convert.ToInt32(items[3]);
+                    motorRightTurbo = Convert.ToInt32(items[4]);
+                }
+                catch (Exception e)
+                {
+                    Print("[ERR] Probleme lors de l'analyse de la reponse " + answer + "\r\nException: " + e);
+                    motorLeftNormal = 0;
+                    motorLeftTurbo = 0;
+                    motorRightNormal = 0;
+                    motorRightTurbo = 0;
+                }
+            }
+            else
+            {
+                motorLeftNormal = 0;
+                motorLeftTurbo = 0;
+                motorRightNormal = 0;
+                motorRightTurbo = 0;
+            }
         }
     }
 }
