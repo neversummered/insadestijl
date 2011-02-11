@@ -27,9 +27,12 @@
 #define UART_BAUDRATE 9600
 #define UART_RX_BUFFER_SIZE 100
 
+extern unsigned char UART_RX_BufferLength;
+
+#define UartGetBufferSize() UART_RX_BufferLength
+
 void uart_init(void);
 void UartPutchar(char c);
 char UartGetchar(void);
-char UartGetBufferSize(void);
 
 #endif /* __UART_H__ */
