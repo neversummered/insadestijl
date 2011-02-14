@@ -16,7 +16,7 @@ namespace Controleur_Robot
         int FwMajorVer, FwMinorVer;
 
         const int IhmMajorVer = 1;
-        const int IhmMinorVer = 1;
+        const int IhmMinorVer = 2;
 
         public Principal()
         {
@@ -207,6 +207,9 @@ namespace Controleur_Robot
                 /* Si tout s'est bien passé, verification de la version du FW */
                 ctrlRobot.GetVersion(out FwMajorVer, out FwMinorVer);
 
+                /* Puis demarrage du robot */
+                ctrlRobot.Start();
+
                 ActivationElements();
 
                 labelConnecter.Text = "connecté (" + portname + ")";
@@ -216,6 +219,7 @@ namespace Controleur_Robot
             else
             {
                 timerCommande.Enabled = false;
+                ctrlRobot.Stop(); 
                 ctrlRobot.Close();
 
                 DesactivationElements();
@@ -234,9 +238,9 @@ namespace Controleur_Robot
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             About about = new About();
-
-            about.SetVersionIHM(IhmMajorVer, IhmMinorVer);
-            about.SetVersionFW(FwMajorVer, FwMinorVer);
+            
+            about.SetVersionIHM(Properties.Resources.MAJOR_VERSION, Properties.Resources.MINOR_VERSION);
+            about.SetVersionFW(Convert.ToString(FwMajorVer), Convert.ToString(FwMinorVer));
             about.Show();
         }
 

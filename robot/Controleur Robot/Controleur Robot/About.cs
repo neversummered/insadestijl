@@ -20,14 +20,14 @@ namespace Controleur_Robot
             this.Close();
         }
 
-        public void SetVersionIHM(int majorVersion, int minorVersion)
+        public void SetVersionIHM(string majorVersion, string minorVersion)
         {
             labelIHMVersion.Text = majorVersion + "." + minorVersion;
         }
 
-        public void SetVersionFW(int majorVersion, int minorVersion)
+        public void SetVersionFW(string majorVersion, string minorVersion)
         {
-            if (majorVersion < 0)
+            if (Convert.ToInt32(majorVersion) < 0)
             {
                 labelFwVersion.Text = "Inconnue";
             }

@@ -60,6 +60,24 @@ namespace Controleur_Robot.Properties {
             }
         }
         
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à 1.
+        /// </summary>
+        public static string MAJOR_VERSION {
+            get {
+                return ResourceManager.GetString("MAJOR_VERSION", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à 1b.
+        /// </summary>
+        public static string MINOR_VERSION {
+            get {
+                return ResourceManager.GetString("MINOR_VERSION", resourceCulture);
+            }
+        }
+        
         public static System.Drawing.Icon my_computer {
             get {
                 object obj = ResourceManager.GetObject("my_computer", resourceCulture);

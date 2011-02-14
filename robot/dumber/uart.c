@@ -26,7 +26,7 @@
 #include "uart.h"
 
 unsigned char UART_RX_Buffer[UART_RX_BUFFER_SIZE];
-register unsigned char UART_RX_BufferIndex asm ("r12");
+unsigned char UART_RX_BufferIndex;
 unsigned char UART_RX_BufferLength;
 
 #define MYUBRR (((F_CPU/16/UART_BAUDRATE-1)*2)+1)
