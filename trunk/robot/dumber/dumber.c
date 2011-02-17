@@ -72,6 +72,9 @@ struct ST_EEPROM params;
 #define CMD_RECORD_PARAMS		'R'
 #define CMD_GET_PARAMS			'G'
 
+const char OK_ANS[]="O\n";
+const char ERR_ANS[]="E\n";
+
 /*
  * Fonction: init_periph
  * Initialise l'ensemble des peripheriques
@@ -170,7 +173,7 @@ int odo_gauche, odo_droit;
 				switch (*ptr_cmd)
 				{
 					case CMD_PING: /* ping command: check if robot is on */
-						printf ("O\n");
+						printf (OK_ANS);
 						break;
 					case CMD_SET_MOTORS: /* motor command: set motor speed and dir */
 						if (sscanf ((char *)ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
@@ -178,27 +181,27 @@ int odo_gauche, odo_droit;
 							if ((regle_moteur(MOTEUR_GAUCHE, moteur_gauche)) && 
 							    (regle_moteur(MOTEUR_DROIT, moteur_droit)))
 							{
-								printf ("O\n");
+								printf (OK_ANS);
 							}
-							else printf ("E\n");
+							else printf (ERR_ANS);
 						}
 						else
 						{
-							printf ("E\n");
+							printf (ERR_ANS);
 						} 
 						break;
 					case CMD_START_WATCHDOG: /* start watchdog */
 						demarre_WDT();
-						printf ("O\n");
+						printf (OK_ANS);
 						break;
 					case CMD_RESET_WATCHDOG: /* reset watchdog */
 						if (acquite_WDT() == WDT_ETAT_INACTIF)
 						{
-							printf ("E\n");
+							printf (ERR_ANS);
 						}
 						else
 						{
-							printf ("O\n");
+							printf (OK_ANS);
 						}
 						break;
 					case CMD_GET_SENSOR: /* sensor cmd: return sensor state */
@@ -218,7 +221,7 @@ int odo_gauche, odo_droit;
 						odo_droit=0;
 						
 						reset_WDT();
-						printf ("O\n");
+						printf (OK_ANS);
 						break;
 					case CMD_GET_VERSION: /* return FW version */
 						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
@@ -226,45 +229,45 @@ int odo_gauche, odo_droit;
 					case CMD_SET_LEFT_NORMAL: /* set motor left speed normal*/
 						if (sscanf ((char *)ptr_cmd, "Y=%i", &params.motorLeftNormal)==1)
 						{
-							printf ("O\n");
+							printf (OK_ANS);
 						}
 						else
 						{
-							printf ("E\n");
+							printf (ERR_ANS);
 						}
 						break;
 					case CMD_SET_LEFT_TURBO: /* set motor left speed turbo */
 						if (sscanf ((char *)ptr_cmd, "y=%i", &params.motorLeftTurbo)==1)
 						{
-							printf ("O\n");
+							printf (OK_ANS);
 						}
 						else
 						{
-							printf ("E\n");
+							printf (ERR_ANS);
 						}
 						break;
 					case CMD_SET_RIGHT_NORMAL: /* set motor right speed normal*/
 						if (sscanf ((char *)ptr_cmd, "Z=%i", &params.motorRightNormal)==1)
 						{
-							printf ("O\n");
+							printf (OK_ANS);
 						}
 						else
 						{
-							printf ("E\n");
+							printf (ERR_ANS);
 						}
 						break;
 					case CMD_SET_RIGHT_TURBO: /* set motor right speed turbo*/
 						if (sscanf ((char *)ptr_cmd, "z=%i", &params.motorRightTurbo)==1)
 						{
-							printf ("O\n");	
+							printf (OK_ANS);	
 						}
 						else
 						{
-							printf ("E\n");
+							printf (ERR_ANS);
 						}
 						break;	
 					case CMD_RECORD_PARAMS: /* record params */
-						printf ("O\n");
+						printf (OK_ANS);
 						e2p_write (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
 						break;
 					case CMD_GET_PARAMS:
@@ -281,7 +284,7 @@ int odo_gauche, odo_droit;
 				switch (*ptr_cmd)
 				{
 					case CMD_PING: /* ping command: check if robot is on */
-						printf ("O\n");
+						printf (OK_ANS);
 						break;
 					case CMD_RESET: /* reset system */
 						regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
@@ -291,7 +294,7 @@ int odo_gauche, odo_droit;
 						odo_droit=0;
 						
 						reset_WDT();
-						printf ("O\n");
+						printf (OK_ANS);
 						break;
 					case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
 					case CMD_START_WATCHDOG: 	/* start watchdog */
@@ -306,7 +309,7 @@ int odo_gauche, odo_droit;
 					case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
 					case CMD_RECORD_PARAMS: 	/* record params */
 					case CMD_GET_PARAMS:		/* get params */
-						printf ("E\n"); /* Commande non autorisée */
+						printf (ERR_ANS); /* Commande non autorisée */
 						break;
 					default: /* unknown cmd */
 						printf ("C:%c\n",*ptr_cmd);	
