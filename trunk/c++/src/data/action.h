@@ -13,6 +13,13 @@
 #include "../monitorCommunication/message.h"
 #include "../tools/toolsconvert.h"
 
+
+#define ORDER_FIND_ARENA                    (1)
+#define ORDER_ARENA_FAILED                  (2)
+#define ORDER_ARENA_IS_FOUND                (3)
+#define ORDER_COMPUTE_CONTINUOUSLY_POSITION (4)
+#define ORDER_CONNECT_ROBOT                 (10)
+
 namespace robotInsa
 {
     class Action

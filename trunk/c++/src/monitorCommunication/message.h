@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include "../video/jpegimage.h"
 #include "../data/position.h"
+#include "../data/battery.h"
+
 
 // déclaration des identificateurs des types de données
 // entier 16 bits
@@ -38,6 +40,7 @@ namespace robotInsa {
         void setString(const char* str);
         void setJpegImage(JpegImage *cImg);
         void setPosition(Position p);
+        void setBattery(Battery b);
 
         char getType(){
             return dataType;

@@ -75,14 +75,14 @@ public final class MonitorReceive extends Thread {
                 if (type == 'V') {                                          /* Données reçues de type video */
                     img = new ImageIcon(payload).getImage();
                     monitor.show(img);
-                }
-
-                if (type == 'P') {                                          /* Données reçues de type position */
+                } else if (type == 'P') {                                          /* Données reçues de type position */
                     monitor.setPosition(payload);
-                }
-                if (type == 'R'){
+                } else if (type == 'I'){
                     int robot_status = ByteBuffer.wrap(payload).getInt();
                     monitor.changeRobotStatus(robot_status);
+                } else if (type == 'B'){
+                    int vbat = ByteBuffer.wrap(payload).getInt();
+                    monitor.changeBatLevel(vbat);
                 }
             }
 

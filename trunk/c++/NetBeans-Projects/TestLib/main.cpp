@@ -30,6 +30,15 @@
 #include "../../src/tools/cvrect32f.h"
 #include "../../src/robotCommunication/communicationrobot.h"
 
+#define CAMERA_STATE_SEND_IMAGE           (0)
+#define CAMERA_STATE_SEND_IMAGE_POSITION  (1)
+#define CAMERA_STATE_SEND_ARENA           (2)
+#define CAMERA_STATE_SAVE_ARENA           (3)
+#define CAMERA_STATE_DO_NOTHING           (4)
+
+#define EVENT_WAIT                        (105)
+#define EVENT_ARENA_SAVED                 (106)
+
 //#include "/Users/Piro/Documents/Implementation/DeStijl/archi/video/utils.h"
 using namespace std;
 
@@ -37,6 +46,10 @@ using namespace robotInsa;
 
 long long debut_mesure;
 long long fin_mesure;
+
+int state_camera;
+int previous_state;
+int previous_stable_state;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 Action act = Action(0);
@@ -108,6 +121,37 @@ void testArena() {
     Arena arene = a.computeAreaPosition(image);
     drawBox(image, arene.getBox());
     showImage(image, "Arena");
+}
+
+void testArena2() {
+    // On déclare notre pointeur sur SourceVideo
+    SourceVideo *src;
+
+    src = new Camera(0);
+
+
+    // Initialisation du flux vidéo
+    try {
+        src->open();
+    } catch (MyException &e) {
+        // Si une exception se produit, on l'affiche et on quitte.
+        std::cout << e.what() << std::endl;
+        delete src;
+    }
+
+    // Si tout va bien, on affiche les informations du flux vidéo.
+    std::cout << src->getInfos() << std::endl;
+
+    Image img;
+    src->getFrame(img);
+    JpegImage jImg(img);
+
+    AnalyseImage a;
+    Arena arene = a.computeAreaPosition(img);
+    drawBox(img.ipl(), arene.getBox());
+    showImage(img.ipl(), "Arena");
+    a.setArena(&arene);
+    delete src;
 }
 
 void testPosition() {
@@ -419,7 +463,7 @@ void testCalibration() {
             OrdreMouvement mv = OrdreMouvement(msg);
             cout << "speed:" << mv.getSpeed()
                     << " direction:" << mv.getDirection() << endl;
-        } 
+        }
     }
     s.closeServer();
 }
@@ -511,7 +555,7 @@ void testSingleVideo() {
     delete src;
 }
 
-void testCommRobot(){
+void testCommRobot() {
     CommunicationRobot c;
     RobotStatus status;
     c.RobotOpenCom();
@@ -525,7 +569,7 @@ void testCommRobot(){
     cout << "capteur:" << sensor << endl;
 }
 
-void testManualControl(){
+void testManualControl() {
     Server s;
     s.openServer("9010");
     int broke = 1;
@@ -545,22 +589,22 @@ void testManualControl(){
                     << ",speed:" << mv.getSpeed() << "}" << endl;
             switch (mv.getDirection()) {
                 case DIRECTION_STOP:
-                    c.RobotSetMotors(0,0);
+                    c.RobotSetMotors(0, 0);
                     break;
                 case DIRECTION_AVANCE:
-                    c.RobotSetMotors(1,1);
+                    c.RobotSetMotors(1, 1);
                     break;
                 case DIRECTION_GAUCHE:
-                    c.RobotSetMotors(-1,1);
+                    c.RobotSetMotors(-1, 1);
                     break;
                 case DIRECTION_DROITE:
-                    c.RobotSetMotors(1,-1);
+                    c.RobotSetMotors(1, -1);
                     break;
                 case DIRECTION_RECULE:
-                    c.RobotSetMotors(-1,-1);
+                    c.RobotSetMotors(-1, -1);
                     break;
                 default:
-                    c.RobotSetMotors(0,0);
+                    c.RobotSetMotors(0, 0);
             }
         }
     }
@@ -568,27 +612,131 @@ void testManualControl(){
     s.closeServer();
 }
 
-/*void testManualControl(){
+
+void changeState(int event) {
+    switch (event) {
+        case ORDER_FIND_ARENA:
+            state_camera = CAMERA_STATE_SEND_ARENA;
+            break;
+        case ORDER_ARENA_FAILED:
+            state_camera = CAMERA_STATE_SEND_IMAGE;
+            break;
+        case ORDER_ARENA_IS_FOUND:
+            state_camera = CAMERA_STATE_SAVE_ARENA;
+            break;
+        case ORDER_COMPUTE_CONTINUOUSLY_POSITION:
+            state_camera = CAMERA_STATE_SEND_IMAGE_POSITION;
+            break;
+        case EVENT_ARENA_SAVED:
+            state_camera = CAMERA_STATE_SEND_IMAGE;
+            break;
+        case EVENT_WAIT:
+            state_camera = CAMERA_STATE_DO_NOTHING;
+            break;
+    }
+
+}
+
+void* thr_f2(void * param) {
+    Server *s = (Server *) param;
+    // On déclare notre pointeur sur SourceVideo
+    SourceVideo *src;
+    src = new Camera(0);
+    // Initialisation du flux vidéo
+    try {
+        src->open();
+    } catch (MyException &e) {
+        // Si une exception se produit, on l'affiche et on quitte.
+        std::cout << e.what() << std::endl;
+        delete src;
+    }
+
+    // Si tout va bien, on affiche les informations du flux vidéo.
+    std::cout << src->getInfos() << std::endl;
+    Image img;
+    JpegImage jImg(img);
+    Message msg = Message();
+    Position p = Position(1.0, 1.0, 4.0);
+
+    int broke = 1;
+
+    AnalyseImage a;
+    Arena arene;
+    Position pos;
+    while (broke >= 0) {
+        try {
+            switch (state_camera) {
+                case CAMERA_STATE_SEND_IMAGE:
+                    cout << "Image" << endl;
+                    src->getFrame(img);
+                    jImg.setJpegImage(img);
+                    msg.setJpegImage(&jImg);
+                    broke = s->sendMessage(&msg);
+                    break;
+                case CAMERA_STATE_SEND_IMAGE_POSITION:
+                    cout << "Image+Position" << endl;
+                    src->getFrame(img);
+                    pos = a.computeRobotPosition(img);
+                    drawPosition(img.ipl(), pos);
+                    jImg.setJpegImage(img);
+                    msg.setJpegImage(&jImg);
+                    broke = s->sendMessage(&msg);
+                    break;
+                case CAMERA_STATE_SEND_ARENA:
+                    cout << "Arene" << endl;
+                    a.setArena(NULL);
+                    src->getFrame(img);
+                    arene = a.computeAreaPosition(img);
+                    drawArena(img, arene);
+                    drawRec(img.ipl(), CvBoxtoCvRect(arene.getBox()));
+                    jImg.setJpegImage(img);
+                    msg.setJpegImage(&jImg);
+                    broke = s->sendMessage(&msg);
+                    changeState(EVENT_WAIT);
+                    break;
+                case CAMERA_STATE_SAVE_ARENA:
+                    cout << "Save arene" << endl;
+                    a.setArena(&arene);
+                    changeState(EVENT_ARENA_SAVED);
+                    break;
+                case CAMERA_STATE_DO_NOTHING:
+                    cout << "Dodo" << endl;
+                    break;
+            }
+            usleep(100000);
+
+        } catch (MyException &e) {
+            std::cout << "\n" << e.what() << std::endl;
+            break;
+        }
+    }
+}
+
+
+void testCameraControl() {
     Server s;
     s.openServer("9010");
     int broke = 1;
-    long long time;
+    pthread_t thr1;
 
-    Message msg = message();
+
+    pthread_create(&thr1, NULL, thr_f2, &s);
+
+    Message msg = Message();
+    state_camera = CAMERA_STATE_SEND_IMAGE;
+
     while (broke > 0) {
         broke = s.receiveMessage(msg);
         //cout << "message reçu {type:" << msg.getType() << "}" << endl;
+        if (msg.getType() == 'A') {
+            Action action = Action(msg);
+            cout << "action:" << action.getOrder() << endl;
+            changeState(action.getOrder());
+        }
 
-        if (msg.getType() == 'M') {
-            OrdreMouvement mv = OrdreMouvement(msg);
-            cout << "speed:" << mv.getSpeed()
-                    << " direction:" << mv.getDirection() << en
-
+    }
     s.closeServer();
-
-    std::cout << std::endl;
-
-}*/
+}
 
 int main(int argc, char* argv[]) {
     // testPosition2();
@@ -596,12 +744,15 @@ int main(int argc, char* argv[]) {
     //testServeur();
     //testVideoSreveur();
     //testReceptionOrdre();
-    //testArena();
+    //testArena2();
+    //testArena2();
+    
     //testCalibration();
     //testArenaPosition();
     //testSingleVideo();
     //testCommRobot();
 
-    testManualControl();
+    //testManualControl();
+    testCameraControl();
     return 0;
 }
