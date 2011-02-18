@@ -21,9 +21,14 @@ public class monitorUI extends javax.swing.JFrame {
     static int VIDEO_ARENA_KO = 4;
     static int VIDEO_WITH_POSITION = 5;
     static int ROBOT_UNKNOWN = -1;
-    static int ROBOT_CONNEXION_FAILED = 0;
-    static int ROBOT_CONNECTED = 2;
-    static int ROBOT_CONNEXION_TRYING = 3;
+    static int ROBOT_CONNEXION_TRYING = -2;
+    static int STATUS_OK = 0;
+    static int STATUS_ERR_NO_FILE = 1;
+    static int STATUS_ERR_TIMEOUT = 2;
+    static int STATUS_ERR_UNKNOWN_CMD = 3;
+    static int STATUS_ERR_INVALID_PARAMS = 4;
+    static int STATUS_ERR_WDT_EXPIRED = 5;
+    static int STATUS_ERR_SELECT = 6;
     static int BAT_UNKNONW = -1;
     static int BAT_HIGH = 1;
     static int BAT_MED = 2;
@@ -71,9 +76,7 @@ public class monitorUI extends javax.swing.JFrame {
 
     private void initMonitor() {
         initRobotCommunication();
-
         video_status = VIDEO_UNKNOWN;
-
         changeRobotStatus(ROBOT_UNKNOWN);
         changeBatLevel(BAT_UNKNONW);
 
@@ -91,8 +94,8 @@ public class monitorUI extends javax.swing.JFrame {
 
     private void initRobotCommunication() {
         direction = 0;
-
         ms.stopThread();
+        JButtonConnectRobot.setEnabled(true);
 
         jButtonRight.setEnabled(true);
         jButtonDown.setEnabled(true);
@@ -111,21 +114,32 @@ public class monitorUI extends javax.swing.JFrame {
         if (newRobotStatus == ROBOT_UNKNOWN) {
             JTextRobotStatus.setText("");
             jPanelControl.setVisible(false);
+            System.out.println("connexion unknown");
             initRobotCommunication();
         } else if (newRobotStatus == ROBOT_CONNEXION_TRYING) {
             JTextRobotStatus.setText("Waiting connexion");
             jPanelControl.setVisible(false);
             JButtonConnectRobot.setEnabled(false);
+            System.out.println("connexion waited ");
             initRobotCommunication();
-        } else if (newRobotStatus == ROBOT_CONNEXION_FAILED) {
-            JTextRobotStatus.setText("Not connected");
+        } else if (newRobotStatus == STATUS_ERR_NO_FILE) {
+            JTextRobotStatus.setText("Connexion failed");
             jPanelControl.setVisible(false);
             JButtonConnectRobot.setEnabled(true);
+            System.out.println("connexion failed ");
             initRobotCommunication();
-        } else if (newRobotStatus == ROBOT_CONNECTED) {
+        } else if (newRobotStatus == STATUS_ERR_TIMEOUT) {
+            JTextRobotStatus.setText("Timeout");
+            jPanelControl.setVisible(false);
+            JButtonConnectRobot.setEnabled(true);
+            System.out.println("connexion timeout");
+            initRobotCommunication();
+        } else if (newRobotStatus == STATUS_OK) {
             JTextRobotStatus.setText("Connected");
             jPanelControl.setVisible(true);
             JButtonConnectRobot.setEnabled(false);
+            System.out.println("connected");
+            ms = new MonitorSend(this);
             ms.start();
         }
     }
@@ -140,7 +154,7 @@ public class monitorUI extends javax.swing.JFrame {
         }
     }
 
-    private void changeBatLevel(int newBatLevel) {
+    public void changeBatLevel(int newBatLevel) {
         bat_status = newBatLevel;
 
         if (newBatLevel == BAT_UNKNONW) {
@@ -165,10 +179,11 @@ public class monitorUI extends javax.swing.JFrame {
             jTextIp.setEditable(false);
             jTextPort.setEditable(false);
 
-            mr.start();
 
             jPanelCamera.setVisible(true);
             jPanelRobotStatus.setVisible(true);
+            mr = new MonitorReceive(this);
+            mr.start();
         }
         if (newCommunicationStatus == COMMUNICATION_FAILURE) {
             jTextStatusCon.setText("Disconnected");
@@ -1196,8 +1211,8 @@ public class monitorUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jRadioButton2ActionPerformed
 
     private void JButtonConnectRobotActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JButtonConnectRobotActionPerformed
-        sendAction(ORDER_CONNECT_ROBOT);
         changeRobotStatus(ROBOT_CONNEXION_TRYING);
+        sendAction(ORDER_CONNECT_ROBOT);
     }//GEN-LAST:event_JButtonConnectRobotActionPerformed
 
     private void jButtonComputePositionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonComputePositionActionPerformed

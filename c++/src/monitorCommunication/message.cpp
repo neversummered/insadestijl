@@ -112,5 +112,28 @@ namespace robotInsa {
          
          setMessage('P', datalen, data);
      }
+
+     void Message::setBattery(Battery b) {
+        dataType = 'B';
+        len = 9;
+
+        if (data != NULL)
+            free(data); /* libération de la mémoire */
+
+        data = (char*)malloc(len); /* réservation mémoire pour le packet */
+
+        /* construction du packet */
+        data[0] = dataType;
+        data[4] = 4;
+        data[3] = 0;
+        data[2] = 0;
+        data[1] = 0;
+
+        int value = b.getLevel();
+        data[5] = value >> 24;
+        data[6] = value >> 16;
+        data[7] = value >> 8;
+        data[8] = value;
+     }
     
 }

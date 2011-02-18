@@ -77,6 +77,7 @@ namespace robotInsa {
     }
 
     Arena AnalyseImage::computeAreaPosition(Image img) {
+        
         imgSrc = cvCloneImage(img.ipl());
         resizeWithFactor();
         filterThreshold = 230;
