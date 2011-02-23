@@ -39,7 +39,7 @@ public final class MonitorSend extends Thread {
             monitor.sendData(msg);
 
             try {
-                sleep(50);
+                sleep(200);
             } catch (InterruptedException p) {
             }
         }
