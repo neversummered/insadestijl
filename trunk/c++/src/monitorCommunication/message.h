@@ -10,19 +10,6 @@
 #include "../data/battery.h"
 
 
-// déclaration des identificateurs des types de données
-// entier 16 bits
-#define TYPE_ENTIER  'I'
-// reel simple précision sur 4 octets
-#define TYPE_REEL  'R'
-// tableau d entiers codés sur  16 bits
-#define TYPE_TABLEAU_ENTIERS  'A'
-// tableau de réels simple précision
-#define TYPE_TABLEAU_REELS 'T'
-// caractère 1 octet
-#define TYPE_CAR  'C'
-// chaine de caractères
-#define TYPE_CHAINE  'S'
 
 namespace robotInsa {
 

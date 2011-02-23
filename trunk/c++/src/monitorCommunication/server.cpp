@@ -134,8 +134,8 @@ namespace robotInsa {
 
     int Server::sendMessage(Message* msg) {
         int ret;
+        size_t nb_sent = 0;
         if (active) {
-            size_t nb_sent = 0;
             while (nb_sent < msg->getLenght()) {
                 int ret = send(socketID,
                         msg->getData() + nb_sent,
@@ -146,11 +146,10 @@ namespace robotInsa {
                     perror("[tcp_client_a::send]");
                     return ret;
                 }
-
                 nb_sent += ret;
             }
         }
-        return ret;
+        return nb_sent;
     }
 
     int Server::receiveMessage(Message &msg) {

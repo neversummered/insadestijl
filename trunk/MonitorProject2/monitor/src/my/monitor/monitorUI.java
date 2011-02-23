@@ -30,9 +30,9 @@ public class monitorUI extends javax.swing.JFrame {
     static int STATUS_ERR_WDT_EXPIRED = 5;
     static int STATUS_ERR_SELECT = 6;
     static int BAT_UNKNONW = -1;
-    static int BAT_HIGH = 1;
-    static int BAT_MED = 2;
-    static int BAT_LOW = 3;
+    static int BAT_HIGH = 2;
+    static int BAT_MED = 1;
+    static int BAT_LOW = 0;
     static int COMMUNICATION_DISCONNECTED = 0;
     static int COMMUNICATION_CONNECTED = 1;
     static int COMMUNICATION_FAILURE = 2;
@@ -156,16 +156,20 @@ public class monitorUI extends javax.swing.JFrame {
 
     public void changeBatLevel(int newBatLevel) {
         bat_status = newBatLevel;
+        jTextFieldBattery.setText(""+newBatLevel);
 
         if (newBatLevel == BAT_UNKNONW) {
             jRadioButtonHighBat.setSelected(false);
             jRadioButtonLowBat.setSelected(false);
             jRadioButtonMedBat.setSelected(false);
         } else if (newBatLevel == BAT_HIGH) {
+            jTextFieldBattery.setText("HIGH");
             jRadioButtonHighBat.setSelected(true);
         } else if (newBatLevel == BAT_MED) {
+            jTextFieldBattery.setText("MED");
             jRadioButtonMedBat.setSelected(true);
         } else if (newBatLevel == BAT_LOW) {
+            jTextFieldBattery.setText("LOW");
             jRadioButtonLowBat.setSelected(true);
         }
     }
@@ -346,6 +350,7 @@ public class monitorUI extends javax.swing.JFrame {
         jRadioButtonMedBat = new javax.swing.JRadioButton();
         jRadioButtonLowBat = new javax.swing.JRadioButton();
         jLabel7 = new javax.swing.JLabel();
+        jTextFieldBattery = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -430,7 +435,6 @@ public class monitorUI extends javax.swing.JFrame {
         jLabel1.setBackground(new java.awt.Color(255, 255, 255));
         jLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         jLabel1.setPreferredSize(new java.awt.Dimension(640, 480));
-        jLabel1.setSize(new java.awt.Dimension(640, 480));
         jLabel1.addContainerListener(new java.awt.event.ContainerAdapter() {
             public void componentAdded(java.awt.event.ContainerEvent evt) {
                 jLabel1ComponentAdded(evt);
@@ -554,8 +558,8 @@ public class monitorUI extends javax.swing.JFrame {
                 .addComponent(jRadioManual)
                 .addGap(39, 39, 39)
                 .addComponent(jRadioAutomatic)
-                .addContainerGap(106, Short.MAX_VALUE))
-            .addComponent(jLabel19, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE)
+                .addContainerGap(128, Short.MAX_VALUE))
+            .addComponent(jLabel19, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -672,7 +676,7 @@ public class monitorUI extends javax.swing.JFrame {
                     .addComponent(jLabel5)
                     .addGroup(jPanelManualLayout.createSequentialGroup()
                         .addComponent(jLabel6)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 184, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 192, Short.MAX_VALUE)
                         .addComponent(jLabelSpeed, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jSliderSpeed, javax.swing.GroupLayout.PREFERRED_SIZE, 261, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
@@ -771,21 +775,21 @@ public class monitorUI extends javax.swing.JFrame {
                         .addGap(117, 117, 117))
                     .addGroup(jPanelAutomaticLayout.createSequentialGroup()
                         .addComponent(jLabelAutomatic)
-                        .addContainerGap(229, Short.MAX_VALUE))
+                        .addContainerGap(239, Short.MAX_VALUE))
                     .addGroup(jPanelAutomaticLayout.createSequentialGroup()
                         .addComponent(jRadioObjective)
                         .addGap(18, 18, 18)
-                        .addComponent(jComboObjective, 0, 118, Short.MAX_VALUE)
+                        .addComponent(jComboObjective, 0, 121, Short.MAX_VALUE)
                         .addGap(117, 117, 117))
                     .addGroup(jPanelAutomaticLayout.createSequentialGroup()
                         .addGroup(jPanelAutomaticLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelAutomaticLayout.createSequentialGroup()
-                                .addComponent(jTextMissionStatus, javax.swing.GroupLayout.DEFAULT_SIZE, 152, Short.MAX_VALUE)
+                                .addComponent(jTextMissionStatus, javax.swing.GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
                                 .addGap(18, 18, 18)
                                 .addComponent(jButtonExecute))
                             .addGroup(jPanelAutomaticLayout.createSequentialGroup()
                                 .addComponent(jLabelMission)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 179, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(117, 117, 117))))
         );
         jPanelAutomaticLayout.setVerticalGroup(
@@ -832,7 +836,7 @@ public class monitorUI extends javax.swing.JFrame {
                 .addGroup(jPanelControlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel6, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanelManual, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanelAutomatic, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE))
+                    .addComponent(jPanelAutomatic, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanelControlLayout.setVerticalGroup(
@@ -871,21 +875,20 @@ public class monitorUI extends javax.swing.JFrame {
         jPanelRobotStatusLayout.setHorizontalGroup(
             jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
-                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel7))
-                    .addComponent(JButtonConnectRobot, javax.swing.GroupLayout.Alignment.LEADING))
-                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
-                        .addGap(21, 21, 21)
+                .addComponent(JButtonConnectRobot)
+                .addGap(21, 21, 21)
+                .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelRobotStatusLayout.createSequentialGroup()
                         .addComponent(jLabel4)
-                        .addGap(18, 18, 18)
-                        .addComponent(JTextRobotStatus, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRobotStatusLayout.createSequentialGroup()
-                        .addGap(104, 104, 104)
+                        .addGap(98, 98, 98)
+                        .addComponent(JTextRobotStatus, javax.swing.GroupLayout.DEFAULT_SIZE, 234, Short.MAX_VALUE))
+                    .addGroup(jPanelRobotStatusLayout.createSequentialGroup()
+                        .addComponent(jLabel7)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 39, Short.MAX_VALUE)
+                        .addComponent(jTextFieldBattery, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jRadioButtonHighBat)
-                        .addGap(21, 21, 21)
+                        .addGap(18, 18, 18)
                         .addComponent(jRadioButtonMedBat)
                         .addGap(18, 18, 18)
                         .addComponent(jRadioButtonLowBat)
@@ -901,11 +904,13 @@ public class monitorUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jRadioButtonHighBat)
                         .addComponent(jRadioButtonMedBat)
-                        .addComponent(jRadioButtonLowBat))
-                    .addComponent(jLabel7))
-                .addContainerGap(6, Short.MAX_VALUE))
+                        .addComponent(jRadioButtonLowBat)
+                        .addComponent(jRadioButtonHighBat))
+                    .addGroup(jPanelRobotStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jTextFieldBattery, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel7)))
+                .addContainerGap(13, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
@@ -960,11 +965,11 @@ public class monitorUI extends javax.swing.JFrame {
                             .addComponent(jTextStatusCon, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(jTextStatusCon2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(jPanelRobotStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanelRobotStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanelCamera, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanelControl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanelControl, javax.swing.GroupLayout.PREFERRED_SIZE, 607, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(58, 58, 58))
         );
 
@@ -975,7 +980,7 @@ public class monitorUI extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(55, Short.MAX_VALUE))
+                .addContainerGap(74, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1292,6 +1297,7 @@ public class monitorUI extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField7;
     private javax.swing.JTextField jTextField8;
     private javax.swing.JTextField jTextField9;
+    private javax.swing.JTextField jTextFieldBattery;
     private javax.swing.JTextField jTextIp;
     private javax.swing.JTextField jTextMissionStatus;
     private javax.swing.JTextField jTextOrientation;
