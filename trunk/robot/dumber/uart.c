@@ -29,7 +29,12 @@ unsigned char UART_RX_Buffer[UART_RX_BUFFER_SIZE];
 unsigned char UART_RX_BufferIndex;
 unsigned char UART_RX_BufferLength;
 
-#define MYUBRR (((F_CPU/16/UART_BAUDRATE-1)*2)+1)
+#if (F_CPU == 8000000UL)
+//#define MYUBRR (((F_CPU/16/UART_BAUDRATE-1)*2)+1)
+#define MYUBRR 103
+#else
+#define MYUBRR 95
+#endif 
 
 void uart_init(void)
 {	

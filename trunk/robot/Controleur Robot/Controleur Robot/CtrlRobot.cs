@@ -111,7 +111,7 @@ namespace Controleur_Robot
             base.NewLine = "\n";
             base.ReadBufferSize = 100;
             base.WriteBufferSize = 100;
-            base.ReadTimeout = 100;
+            base.ReadTimeout = 10;
             base.WriteTimeout = SerialPort.InfiniteTimeout;
 
             base.BaudRate = 9600;
@@ -218,6 +218,8 @@ namespace Controleur_Robot
             Print("Reponse recue: " + ans);
 
 	        /* Analyse de la reponse */
+            if (ans.Length < 1) ans = Convert.ToString(ANS_UNKNOWN_CMD);
+
             switch (ans[0])
 	        {
 	        case ANS_UNKNOWN_CMD:
@@ -293,6 +295,8 @@ namespace Controleur_Robot
 	        Print ("reponse recue: " + answer);
 
 	        /* Analyse de la reponse */
+            if (answer.Length < 1) answer = Convert.ToString(ANS_UNKNOWN_CMD);
+
 	        switch (answer[0])
 	        {
 	        case ANS_UNKNOWN_CMD:

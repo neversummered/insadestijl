@@ -23,6 +23,7 @@
  
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 #include "uart.h"
 #include "timer.h"
@@ -132,10 +133,14 @@ int odo_gauche, odo_droit;
 	odo_gauche=0;
 	odo_droit=0;
 
+	set_sleep_mode(SLEEP_MODE_IDLE);
+
 	sei();
 
 	for (;;)
 	{
+		sleep_mode();
+
 		/* Verification de la batterie */
 		if (etat_vbat()==0)
 		{
