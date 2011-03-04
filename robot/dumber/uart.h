@@ -24,6 +24,11 @@
 #ifndef __UART_H__
 #define __UART_H__
 
+#ifdef F_CPU
+#undef F_CPU
+#define F_CPU 7372800UL
+#endif
+
 #define UART_BAUDRATE 9600
 #define UART_RX_BUFFER_SIZE 100
 

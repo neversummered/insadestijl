@@ -210,6 +210,9 @@ namespace Controleur_Robot
                 /* Puis demarrage du robot */
                 ctrlRobot.Start();
 
+                /* et lancement du timer de watchdog */
+                timerWatchdog.Enabled = true;
+
                 ActivationElements();
 
                 labelConnecter.Text = "connecté (" + portname + ")";
@@ -219,6 +222,9 @@ namespace Controleur_Robot
             else
             {
                 timerCommande.Enabled = false;
+                /* et arret du timer de watchdog */
+                timerWatchdog.Enabled = false;
+
                 ctrlRobot.Stop(); 
                 ctrlRobot.Close();
 
@@ -295,7 +301,7 @@ namespace Controleur_Robot
 
         private void timerWatchdog_Tick(object sender, EventArgs e)
         {
-
+            ctrlRobot.ReloadWdt();
         }
 
         private void logToolStripMenuItem_Click(object sender, EventArgs e)

@@ -23,13 +23,12 @@
     /* Command list */
 #define ROBOT_CMD_PING                  'p'
 #define ROBOT_CMD_SET_MOTORS            'm'
-#define ROBOT_CMD_START_WATCHDOG	'W'
-#define ROBOT_CMD_RELOAD_WATCHDOG	'w'
+#define ROBOT_CMD_START_WATCHDOG	    'W'
+#define ROBOT_CMD_RELOAD_WATCHDOG	    'w'
 #define ROBOT_CMD_GET_SENSOR            's'
 #define ROBOT_CMD_GET_VBAT              'v'
 #define ROBOT_CMD_GET_ODO               'o'
 #define ROBOT_CMD_RESET                 'r'
-
 
 namespace robotInsa {
 
@@ -240,7 +239,7 @@ namespace robotInsa {
 
     RobotStatus CommunicationRobot::RobotGetSensor(int *sensor) {
         
-        *sensor = 0;
+        *sensor = -1;
 
         sprintf(buffer_out, "%c\r", ROBOT_CMD_GET_SENSOR);
 
@@ -256,8 +255,8 @@ namespace robotInsa {
     }
 
     RobotStatus CommunicationRobot::RobotGetOdo(int *odo_left, int *odo_right) {
-        *odo_left = 0;
-        *odo_right = 0;
+        *odo_left = -1;
+        *odo_right = -1;
 
         sprintf(buffer_out, "%c\r", ROBOT_CMD_GET_ODO);
 
@@ -273,7 +272,7 @@ namespace robotInsa {
     }
 
     RobotStatus CommunicationRobot::RobotGetVBat(int *vbat) {
-        *vbat = 0;
+        *vbat = -1;
 
         sprintf(buffer_out, "%c\r", ROBOT_CMD_GET_VBAT);
 

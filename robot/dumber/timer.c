@@ -31,12 +31,14 @@ void callback_activite(void);
 #define MOTEUR_VITESSE_NORMAL	0x35
 #define MOTEUR_VITESSE_TURBO	0x70
 
+#define __WITH_WDT__
+
 char WDT_demarre;
 unsigned int WDT_compteur;
 char WDT_etat;
 
-#define SEUIL_MIN_WDT	3600 /* 100 ms */
-#define SEUIL_MAX_WDT   4320 /* 120 ms */
+#define SEUIL_MIN_WDT	36000 /* 1000 ms */
+#define SEUIL_MAX_WDT   37800 /* 1050 ms */
 
 extern struct ST_EEPROM params;
 
@@ -49,7 +51,8 @@ void timer_init(void)
 	/* Connecte OC1A sur le port, Regle le timer en mode fast PWM 14*/
 	TCCR1A = (1<<COM1A1)+ (1<<WGM11); 
 	TCCR1B = (1<<WGM13) + (1<<WGM12) + (1<<CS10);
-	ICR1 = 222; /* -> Permet une periode de 36000 Hz à 8000000 Hz */
+	//ICR1 = 222; /* -> Permet une periode de 36000 Hz à 8000000 Hz */
+	ICR1 = 204; /* -> Permet une periode de 36000 Hz à 7372800 Hz */
 	OCR1A = 5; /* Desactive la fonction */
 
 	TIMSK1 = (1<<TOIE1);
@@ -107,6 +110,7 @@ static unsigned int compteur=0;
 void demarre_WDT(void)
 {
 	WDT_demarre = 1;
+	WDT_compteur = 0;
 
 	WDT_etat = WDT_ETAT_ACTIF;
 
@@ -118,7 +122,11 @@ void demarre_WDT(void)
 char acquite_WDT(void)
 {
 #ifdef __WITH_WDT__
-	if (WDT_compteur < SEUIL_MIN_WDT) WDT_etat = WDT_ETAT_INACTIF;
+	if (WDT_compteur < SEUIL_MIN_WDT) 
+	{
+		WDT_etat = WDT_ETAT_INACTIF;
+		DDRB = DDRB & ~(1<<PIN1);
+	}
 	else WDT_compteur =0;
 	
 	return WDT_etat;
