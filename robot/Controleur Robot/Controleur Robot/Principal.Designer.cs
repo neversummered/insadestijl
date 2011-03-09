@@ -590,7 +590,7 @@
             // 
             // timerWatchdog
             // 
-            this.timerWatchdog.Interval = 1000;
+            this.timerWatchdog.Interval = 500;
             this.timerWatchdog.Tick += new System.EventHandler(this.timerWatchdog_Tick);
             // 
             // Principal

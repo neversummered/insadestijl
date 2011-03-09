@@ -18,6 +18,8 @@ namespace Controleur_Robot
         const int IhmMajorVer = 1;
         const int IhmMinorVer = 2;
 
+        bool wdt_flipflop=true;
+
         public Principal()
         {
             InitializeComponent();
@@ -212,6 +214,7 @@ namespace Controleur_Robot
 
                 /* et lancement du timer de watchdog */
                 timerWatchdog.Enabled = true;
+                wdt_flipflop = true;
 
                 ActivationElements();
 
@@ -301,7 +304,15 @@ namespace Controleur_Robot
 
         private void timerWatchdog_Tick(object sender, EventArgs e)
         {
-            ctrlRobot.ReloadWdt();
+            if (wdt_flipflop == true)
+            {
+                ctrlRobot.ReloadWdt();
+                wdt_flipflop = false;
+            }
+            else
+            {
+                wdt_flipflop = true;
+            }
         }
 
         private void logToolStripMenuItem_Click(object sender, EventArgs e)

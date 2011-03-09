@@ -111,7 +111,7 @@ namespace Controleur_Robot
             base.NewLine = "\n";
             base.ReadBufferSize = 100;
             base.WriteBufferSize = 100;
-            base.ReadTimeout = 10;
+            base.ReadTimeout = 50;
             base.WriteTimeout = SerialPort.InfiniteTimeout;
 
             base.BaudRate = 9600;

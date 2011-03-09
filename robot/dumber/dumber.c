@@ -76,6 +76,8 @@ struct ST_EEPROM params;
 const char OK_ANS[]="O\n";
 const char ERR_ANS[]="E\n";
 
+extern char WDT_fautes;
+
 /*
  * Fonction: init_periph
  * Initialise l'ensemble des peripheriques
@@ -206,7 +208,7 @@ int odo_gauche, odo_droit;
 						}
 						else
 						{
-							printf (OK_ANS);
+							printf ("O:%d\n",WDT_fautes);
 						}
 						break;
 					case CMD_GET_SENSOR: /* sensor cmd: return sensor state */

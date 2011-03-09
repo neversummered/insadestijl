@@ -35,12 +35,16 @@ void callback_activite(void);
 
 char WDT_demarre;
 unsigned int WDT_compteur;
+char WDT_fautes;
 char WDT_etat;
 
-#define SEUIL_MIN_WDT	36000 /* 1000 ms */
+#define SEUIL_MIN_WDT	34800 /* 950 ms */
 #define SEUIL_MAX_WDT   37800 /* 1050 ms */
 
+#define WDT_FAUTES_MAX	10
+
 extern struct ST_EEPROM params;
+extern void clignotte_led(void);
 
 void timer_init(void)
 {
@@ -84,6 +88,7 @@ void timer_init(void)
 	WDT_compteur = 0;
 	WDT_etat = WDT_ETAT_ATTENTE;
 	WDT_demarre=0;
+	WDT_fautes = 0;
 }			
 
 ISR(SIG_OVERFLOW1, ISR_BLOCK)
@@ -95,7 +100,18 @@ static unsigned int compteur=0;
 	{
 		WDT_compteur ++;
 
-		if (WDT_compteur > SEUIL_MAX_WDT) WDT_etat = WDT_ETAT_INACTIF;
+		if (WDT_compteur > SEUIL_MAX_WDT) 
+		{
+			if (WDT_fautes> WDT_FAUTES_MAX)
+			{
+				WDT_etat = WDT_ETAT_INACTIF;
+			}
+			else
+			{
+				WDT_fautes++;
+				WDT_compteur =0;	
+			}
+		}
 	}
 #endif /* __WITH_WDT__ */
 
@@ -111,6 +127,7 @@ void demarre_WDT(void)
 {
 	WDT_demarre = 1;
 	WDT_compteur = 0;
+	WDT_fautes = 0;
 
 	WDT_etat = WDT_ETAT_ACTIF;
 
@@ -124,10 +141,22 @@ char acquite_WDT(void)
 #ifdef __WITH_WDT__
 	if (WDT_compteur < SEUIL_MIN_WDT) 
 	{
-		WDT_etat = WDT_ETAT_INACTIF;
-		DDRB = DDRB & ~(1<<PIN1);
+		if (WDT_fautes > WDT_FAUTES_MAX)
+		{
+			WDT_etat = WDT_ETAT_INACTIF;
+			DDRB = DDRB & ~(1<<PIN1);
+		}
+		else
+		{
+			WDT_fautes++;
+			WDT_compteur=0;	
+		}
 	}
-	else WDT_compteur =0;
+	else 
+	{
+		if (WDT_fautes !=0) WDT_fautes--;
+		WDT_compteur =0;
+	}
 	
 	return WDT_etat;
 #else
@@ -137,7 +166,9 @@ char acquite_WDT(void)
 
 void reset_WDT(void)
 {
+	WDT_demarre=0;
 	WDT_compteur = 0;
+	WDT_fautes = 0;
 	WDT_etat = WDT_ETAT_ATTENTE;
 	//OCR1A = 0;
 	DDRB = DDRB & ~(1<<PIN1);
