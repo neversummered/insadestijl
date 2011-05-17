@@ -38,6 +38,9 @@
 #define WDT_ETAT_ATTENTE 2
 #define WDT_ETAT_VBAT 3
 
+#define WITH_WDT	1
+#define WITHOUT_WDT	0
+
 struct ST_EEPROM
 {
 	unsigned char eepromVer;
@@ -49,7 +52,7 @@ struct ST_EEPROM
 
 void timer_init(void);
 char regle_moteur(char moteur, signed char cmd);
-void demarre_WDT(void);
+void demarre_systeme(char wdt);
 char acquite_WDT(void);
 void reset_WDT(void);
 char etat_systeme(void);
