@@ -9,6 +9,7 @@ namespace Controleur_Robot
     {
         private const string CMD_PING="p";
         private const string CMD_SET_MOTORS="m";
+        private const string CMD_START_UNSECURE = "u";
         private const string CMD_START_WATCHDOG="W";
         private const string CMD_RELOAD_WATCHDOG="w";
         private const string CMD_GET_SENSOR="s";
@@ -337,7 +338,7 @@ namespace Controleur_Robot
          */
         public CMD_STATUS Start()
         {
-	        return SendCommand(CMD_START_WATCHDOG);
+	        return SendCommand(CMD_START_UNSECURE);
         }
 
         /*
