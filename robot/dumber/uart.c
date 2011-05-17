@@ -32,7 +32,7 @@ unsigned char UART_RX_BufferLength;
 #define MYUBRR 103
 
 //#if (F_CPU == 8000000UL)
-//#define MYUBRR (((F_CPU/16/UART_BAUDRATE-1)*2)+1)
+////#define MYUBRR (((F_CPU/16/UART_BAUDRATE-1)*2)+1)
 //#define MYUBRR 103
 //#else
 //#define MYUBRR 95
@@ -53,6 +53,13 @@ void uart_init(void)
 	UCSR0C = (3<<UCSZ00);
 } 
 
+int uart_putchar(char c, FILE *stream)
+{
+	UartPutchar(c);
+	
+	return 1;	
+}
+
 void UartPutchar(char c)
 {
 	/* Wait for empty transmit buffer */
@@ -60,6 +67,11 @@ void UartPutchar(char c)
 
 	/* Put data into buffer, sends the data */
 	UDR0 = c;
+}
+
+int uart_getchar(FILE *stream)
+{
+	return ((int)UartGetchar());	
 }
 
 char UartGetchar(void)
@@ -81,7 +93,7 @@ char tmp;
 	return tmp;
 }
 
-ISR(SIG_USART_RECV, ISR_BLOCK)
+ISR(USART_RX_vect, ISR_BLOCK)
 {
 unsigned char receive_data;
 unsigned char index;

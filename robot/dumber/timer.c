@@ -38,8 +38,8 @@ unsigned int WDT_compteur;
 char WDT_fautes;
 char WDT_etat;
 
-#define SEUIL_MIN_WDT	34800 /* 950 ms */
-#define SEUIL_MAX_WDT   37800 /* 1050 ms */
+#define SEUIL_MIN_WDT	16216 /* 450 ms */
+#define SEUIL_MAX_WDT   19820 /* 550 ms */
 
 #define WDT_FAUTES_MAX	10
 
@@ -55,8 +55,8 @@ void timer_init(void)
 	/* Connecte OC1A sur le port, Regle le timer en mode fast PWM 14*/
 	TCCR1A = (1<<COM1A1)+ (1<<WGM11); 
 	TCCR1B = (1<<WGM13) + (1<<WGM12) + (1<<CS10);
-	//ICR1 = 222; /* -> Permet une periode de 36000 Hz à 8000000 Hz */
-	ICR1 = 204; /* -> Permet une periode de 36000 Hz à 7372800 Hz */
+	ICR1 = 222; /* -> Permet une periode de 36000 Hz à 8000000 Hz */
+	//ICR1 = 204; /* -> Permet une periode de 36000 Hz à 7372800 Hz */
 	OCR1A = 5; /* Desactive la fonction */
 
 	TIMSK1 = (1<<TOIE1);
@@ -91,7 +91,7 @@ void timer_init(void)
 	WDT_fautes = 0;
 }			
 
-ISR(SIG_OVERFLOW1, ISR_BLOCK)
+ISR(TIMER1_OVF_vect, ISR_BLOCK)
 {
 static unsigned int compteur=0;
 
@@ -105,6 +105,9 @@ static unsigned int compteur=0;
 			if (WDT_fautes> WDT_FAUTES_MAX)
 			{
 				WDT_etat = WDT_ETAT_INACTIF;
+				DDRB = DDRB & ~(1<<PIN1);
+				regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
+				regle_moteur(MOTEUR_DROIT, MOTEUR_STOP);
 			}
 			else
 			{
@@ -123,9 +126,9 @@ static unsigned int compteur=0;
 	}	
 }
 
-void demarre_WDT(void)
+void demarre_systeme(char wdt)
 {
-	WDT_demarre = 1;
+	if (wdt == WITH_WDT) WDT_demarre = 1;
 	WDT_compteur = 0;
 	WDT_fautes = 0;
 
@@ -139,25 +142,30 @@ void demarre_WDT(void)
 char acquite_WDT(void)
 {
 #ifdef __WITH_WDT__
-	if (WDT_compteur < SEUIL_MIN_WDT) 
+	if (WDT_demarre==1)
 	{
-		if (WDT_fautes > WDT_FAUTES_MAX)
+		if (WDT_compteur < SEUIL_MIN_WDT) 
 		{
-			WDT_etat = WDT_ETAT_INACTIF;
-			DDRB = DDRB & ~(1<<PIN1);
+			if (WDT_fautes > WDT_FAUTES_MAX)
+			{
+				WDT_etat = WDT_ETAT_INACTIF;
+				DDRB = DDRB & ~(1<<PIN1);
+				regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
+				regle_moteur(MOTEUR_DROIT, MOTEUR_STOP);
+			}
+			else
+			{
+				WDT_fautes++;
+				WDT_compteur=0;	
+			}
 		}
-		else
+		else 
 		{
-			WDT_fautes++;
-			WDT_compteur=0;	
+			if (WDT_fautes !=0) WDT_fautes--;
+			WDT_compteur =0;
 		}
-	}
-	else 
-	{
-		if (WDT_fautes !=0) WDT_fautes--;
-		WDT_compteur =0;
-	}
-	
+	}	
+
 	return WDT_etat;
 #else
 	return WDT_ETAT_ACTIF;
@@ -183,6 +191,8 @@ void systeme_faible_vbat(void)
 {
 	WDT_etat = WDT_ETAT_VBAT;
 	DDRB = DDRB & ~(1<<PIN1);
+	regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
+	regle_moteur(MOTEUR_DROIT, MOTEUR_STOP);
 }
 
 char regle_moteur(char moteur, signed char cmd)

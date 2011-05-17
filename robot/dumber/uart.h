@@ -24,6 +24,8 @@
 #ifndef __UART_H__
 #define __UART_H__
 
+#include <stdio.h>
+
 #ifdef F_CPU
 #undef F_CPU
 #define F_CPU 7372800UL
@@ -39,5 +41,8 @@ extern unsigned char UART_RX_BufferLength;
 void uart_init(void);
 void UartPutchar(char c);
 char UartGetchar(void);
+
+int uart_putchar(char c, FILE *stream);
+int uart_getchar(FILE *stream);
 
 #endif /* __UART_H__ */

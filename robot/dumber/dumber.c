@@ -31,6 +31,10 @@
 
 #include <stdio.h>
 
+static FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, uart_getchar,
+                                             _FDEV_SETUP_RW);
+
+
 void divers_init(void);
 char etat_vbat(void);
 void allume_led(void);
@@ -51,11 +55,11 @@ unsigned char motorRightTurbo;
 
 struct ST_EEPROM params;
 
-#define VBAT_SEUIL_ALERTE	0x88
-#define VBAT_SEUIL_STOP 	0x7C
+#define VBAT_SEUIL_ALERTE		0x88
+#define VBAT_SEUIL_STOP 		0x7C
 
-#define FW_MAJOR_VER		1
-#define FW_MINOR_VER		1
+#define FW_MAJOR_VER			1
+#define FW_MINOR_VER			2
 
 #define CMD_PING 				'p'
 #define CMD_RESET				'r'
@@ -72,6 +76,7 @@ struct ST_EEPROM params;
 #define CMD_SET_RIGHT_TURBO		'z'
 #define CMD_RECORD_PARAMS		'R'
 #define CMD_GET_PARAMS			'G'
+#define CMD_UNSECURE_START		'u'
 
 const char OK_ANS[]="O\n";
 const char ERR_ANS[]="E\n";
@@ -124,6 +129,10 @@ unsigned char cmd_received;
 int moteur_droit, moteur_gauche;
 int odo_gauche, odo_droit;
 
+char system;
+
+	stdout = &mystdout;
+
 	init_periph();
 	
 	cmd_received= 0;
@@ -134,7 +143,9 @@ int odo_gauche, odo_droit;
 
 	odo_gauche=0;
 	odo_droit=0;
-
+	
+	system = WDT_ETAT_ATTENTE;
+	
 	set_sleep_mode(SLEEP_MODE_IDLE);
 
 	sei();
@@ -174,15 +185,17 @@ int odo_gauche, odo_droit;
 			ptr_cmd = buffer_cmd;
 			cmd_received=0;
 			
-			if ((etat_systeme() == WDT_ETAT_ACTIF) ||
-			    (etat_systeme() == WDT_ETAT_ATTENTE))
+			system = etat_systeme();
+			
+			switch (system)
 			{
+			case WDT_ETAT_ACTIF:
 				switch (*ptr_cmd)
 				{
 					case CMD_PING: /* ping command: check if robot is on */
 						printf (OK_ANS);
 						break;
-					case CMD_SET_MOTORS: /* motor command: set motor speed and dir */
+					case CMD_SET_MOTORS: /* motor command: set motor speed and direction */
 						if (sscanf ((char *)ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
 						{
 							if ((regle_moteur(MOTEUR_GAUCHE, moteur_gauche)) && 
@@ -197,10 +210,6 @@ int odo_gauche, odo_droit;
 							printf (ERR_ANS);
 						} 
 						break;
-					case CMD_START_WATCHDOG: /* start watchdog */
-						demarre_WDT();
-						printf (OK_ANS);
-						break;
 					case CMD_RESET_WATCHDOG: /* reset watchdog */
 						if (acquite_WDT() == WDT_ETAT_INACTIF)
 						{
@@ -214,7 +223,7 @@ int odo_gauche, odo_droit;
 					case CMD_GET_SENSOR: /* sensor cmd: return sensor state */
 						printf ("O:%d\n",etat_detection_balle());
 						break;
-					case CMD_GET_ODO: /* odometrie cmd: return odometrie */
+					case CMD_GET_ODO: /* odometers cmd: return odometers */
 						printf ("O:%d,%d\n", odo_gauche, odo_droit);
 						break;
 					case CMD_GET_VBAT: /* voltage cmd: return voltage state */
@@ -234,7 +243,7 @@ int odo_gauche, odo_droit;
 						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
 						break;
 					case CMD_SET_LEFT_NORMAL: /* set motor left speed normal*/
-						if (sscanf ((char *)ptr_cmd, "Y=%i", &params.motorLeftNormal)==1)
+						if (sscanf ((char *)ptr_cmd, "Y=%u", (unsigned int*)&params.motorLeftNormal)==1)
 						{
 							printf (OK_ANS);
 						}
@@ -244,7 +253,7 @@ int odo_gauche, odo_droit;
 						}
 						break;
 					case CMD_SET_LEFT_TURBO: /* set motor left speed turbo */
-						if (sscanf ((char *)ptr_cmd, "y=%i", &params.motorLeftTurbo)==1)
+						if (sscanf ((char *)ptr_cmd, "y=%u", (unsigned int*)&params.motorLeftTurbo)==1)
 						{
 							printf (OK_ANS);
 						}
@@ -254,7 +263,7 @@ int odo_gauche, odo_droit;
 						}
 						break;
 					case CMD_SET_RIGHT_NORMAL: /* set motor right speed normal*/
-						if (sscanf ((char *)ptr_cmd, "Z=%i", &params.motorRightNormal)==1)
+						if (sscanf ((char *)ptr_cmd, "Z=%u", (unsigned int*)&params.motorRightNormal)==1)
 						{
 							printf (OK_ANS);
 						}
@@ -264,7 +273,7 @@ int odo_gauche, odo_droit;
 						}
 						break;
 					case CMD_SET_RIGHT_TURBO: /* set motor right speed turbo*/
-						if (sscanf ((char *)ptr_cmd, "z=%i", &params.motorRightTurbo)==1)
+						if (sscanf ((char *)ptr_cmd, "z=%u", (unsigned int*)&params.motorRightTurbo)==1)
 						{
 							printf (OK_ANS);	
 						}
@@ -281,13 +290,64 @@ int odo_gauche, odo_droit;
 						printf ("O:%u,%u,%u,%u\n",params.motorLeftNormal,params.motorLeftTurbo,
 						                          params.motorRightNormal,params.motorRightTurbo);
 						break;
+					case CMD_START_WATCHDOG:    /* start watchdog */
+					case CMD_UNSECURE_START:    /* start insecurely*/
+						printf (ERR_ANS); /* Commande non autorisée */
+						break;
 					default: /* unknown cmd */
 						printf ("C:%c\n",*ptr_cmd);	
 						break;
-				}
-			}
-			else if (etat_systeme() == WDT_ETAT_INACTIF) /* System inactif (du au WDT) */
-			{
+				}				
+				break;
+			case WDT_ETAT_ATTENTE:
+				switch (*ptr_cmd)
+				{
+					case CMD_PING: /* ping command: check if robot is on */
+						printf (OK_ANS);
+						break;
+					case CMD_START_WATCHDOG: /* start watchdog */
+						demarre_systeme(WITH_WDT);
+						printf (OK_ANS);
+						break;
+					case CMD_UNSECURE_START: /* start insecurely*/
+						demarre_systeme(WITHOUT_WDT);
+						printf (OK_ANS);
+						break;
+					case CMD_RESET: /* reset system */
+						regle_moteur(MOTEUR_GAUCHE, MOTEUR_STOP);
+						regle_moteur(MOTEUR_DROIT, MOTEUR_STOP);
+						
+						odo_gauche=0;
+						odo_droit=0;
+						
+						reset_WDT();
+						printf (OK_ANS);
+						break;
+					case CMD_GET_VERSION: /* return FW version */
+						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
+						break;
+					case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
+					case CMD_RESET_WATCHDOG: 	/* reset watchdog */
+					case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
+					case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
+					case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
+					case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
+					case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
+					case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
+					case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
+					case CMD_RECORD_PARAMS: 	/* record params */
+					case CMD_GET_PARAMS:		/* get params */
+						printf (ERR_ANS); /* Commande non autorisée */
+						break;
+					default: /* unknown cmd */
+						printf ("C:%c\n",*ptr_cmd);	
+						break;
+				}					
+				break;
+			default:
+				 /*		etat_systeme() == WDT_ETAT_INACTIF	=> Systeme inactif (du au WDT) 
+			      ||	etat_systeme() == WDT_ETAT_VBAT		=> Batterie trop faible   
+				  */
 				switch (*ptr_cmd)
 				{
 					case CMD_PING: /* ping command: check if robot is on */
@@ -303,13 +363,16 @@ int odo_gauche, odo_droit;
 						reset_WDT();
 						printf (OK_ANS);
 						break;
+					case CMD_GET_VERSION: /* return FW version */
+						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
+						break;
 					case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
 					case CMD_START_WATCHDOG: 	/* start watchdog */
+					case CMD_UNSECURE_START:    /* start insecurely */
 					case CMD_RESET_WATCHDOG: 	/* reset watchdog */
 					case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
 					case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
 					case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
-					case CMD_GET_VERSION: 		/* return FW version */
 					case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
 					case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
 					case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
@@ -321,7 +384,7 @@ int odo_gauche, odo_droit;
 					default: /* unknown cmd */
 						printf ("C:%c\n",*ptr_cmd);	
 						break;
-				}
+				}				
 			}
 		}
 	}
@@ -343,15 +406,23 @@ void divers_init(void)
 char etat_vbat(void)
 {
 unsigned char vbat;
+static char compteur_vbat =0;
+
 	/* Lire l'ADC */
 
 	vbat = (unsigned char) ADCH;
-	
-	if (vbat == 0) /* premiere conversion -> ne pas en tenir compte */
+	compteur_vbat ++;
+
+	if (compteur_vbat<100) /* premieres conversions -> ne pas en tenir compte */
 	{
 		return 2;
 	}
-	else if (vbat <VBAT_SEUIL_STOP)
+	else
+	{
+		compteur_vbat=101;
+	}
+
+	if (vbat <VBAT_SEUIL_STOP)
 	{
 		return 0;
 	}
