@@ -1,27 +1,9 @@
-/*
- * Copyright (C) INSA Toulouse
- * Author: Sebastien DI MERCURIO
- *
- * This file is part of Avrlib.
- *
- * Avrlib is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public
- * License as published by the Free Software Foundation;
- * either version 2, or (at your option) any later version.
- *
- * Avrlib is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public
- * License along with Avrlib; see the file COPYING.  If not,
- * write to the Free Software Foundation, Inc., 51 Franklin Street,
- * Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * Peripheral: eeprom
- * Devices: Megax8
+/**
+ * \file eeprom.c
+ * \brief Driver for EEPROM driver
+ * \author Sebastien DI MERCURIO
+ * 
+ * eeprom.c file contains the driver for EEPROM peripheral
  */
 
 #include <avr/io.h>
@@ -29,24 +11,27 @@
 
 #define EEPROM_SIZE 512
 
-/*
- * e2p_init
- * Initialisation de l'EEPROM
- * entrée: rien
- * sortie: rien
- */
+/**
+ * \brief Initialization of EEPROM
+ *
+ * Prepare EEPROM peripheral for read or write.
+ * Nothing to do on ATMEGAxx8 
+ */ 
 void e2p_init(void)
 {
 	/* rien de special */
 }
 
-/*
- * e2p_read
- * Lecture d'un bloc de donnée en eeprom
- * entrée: offset: Deplacement par rapport au debut de l'eeprom
- *         length: longueur du bloc a ecrire
- * sortie: status 
- *         buffer: pointeur sur un bloc de donnée a remplir
+/**
+ * \brief Read a buffer of data in EEPROM
+ *
+ * Read data in EEPROM and store them in a buffer 
+ * @param[in] offset Offset from the beginning of the EEPROM memory
+ * @param[in] length Number of data to read
+ * @param[out] buffer Pointer to a buffer large enough for the amount of data to read
+ * @return Status of the operation 
+ * @see SUCCESS
+ * @see ADDR_ERROR 
  */
 e2p_status e2p_read(unsigned int offset, unsigned int length, unsigned char *buffer)
 {
@@ -64,13 +49,16 @@ register int i;
 	return SUCCESS;
 }
 
-/*
- * e2p_write
- * Ecriture d'un bloc de donnée en eeprom
- * entrée: offset: Deplacement par rapport au debut de l'eeprom
- *         length: longueur du bloc a ecrire
- *         buffer: pointeur sur un bloc de donnée à utiliser
- * sortie: status 
+/**
+ * \brief Write a buffer of data in EEPROM
+ *
+ * Write data in EEPROM taken from a buffer 
+ * @param[in] offset Offset from the beginning of the EEPROM memory
+ * @param[in] length Number of data to read
+ * @param[in] buffer Pointer to a buffer large enough for the amount of data to write
+ * @return Status of the operation 
+ * @see SUCCESS
+ * @see ADDR_ERROR 
  */
 e2p_status e2p_write(unsigned int offset, unsigned int length, unsigned char *buffer)
 {

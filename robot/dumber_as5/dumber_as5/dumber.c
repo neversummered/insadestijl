@@ -1,24 +1,21 @@
-/*
- * Copyright (C) INSA Toulouse
- * Author: Sebastien DI MERCURIO
+/**
+ * \file dumber.c
+ * \brief Main program for Dumber project
+ * \author Sebastien DI MERCURIO
+ * 
+ * dumber.c file contains main code ans initialization runtime for the project
+ */
+
+/**
+ * \mainpage Dumber project
+ * \section intro_sec Presentation
+ * Dumber is a robot used during practical training in real time at INSA, Toulouse (France).
+ * Th goal of dumber is to serve as a real actuator in a real time control loop. Other part of the loop are a webcam, 
+ * to detect robot position and a real time server/computer to process picture and control the robot.
  *
- * This file is part of brushless DC motor controller.
+ * This documentation describe firmware code fitted inside each robot.
  *
- * Testeur RF is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public
- * License as published by the Free Software Foundation;
- * either version 2, or (at your option) any later version.
- *
- * Testeur RF is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public
- * License along with Testeur RF; see the file COPYING.  If not,
- * write to the Free Software Foundation, Inc., 51 Franklin Street,
- * Fifth Floor, Boston, MA 02110-1301, USA.
+ * Documentation is written in French as doxygen doesn't handle correctly French comment ...
  */
  
 #include <avr/io.h>
@@ -31,36 +28,31 @@
 
 #include <stdio.h>
 
-static FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, uart_getchar,
-                                             _FDEV_SETUP_RW);
-
-
+/*
+ * Functions prototype used in this file
+ */ 
 void divers_init(void);
 char etat_vbat(void);
 void allume_led(void);
 void eteint_led(void);
 char etat_detection_balle(void);
 
-unsigned char buffer_cmd[32];
-
-#define MOTOR_LEFT_NORMAL 1
-#define MOTOR_LEFT_TURBO 2
-#define MOTOR_RIGHT_NORMAL 3
-#define MOTOR_RIGHT_TURBO 4
-
-unsigned char motorLeftNormal;
-unsigned char motorRightNormal;
-unsigned char motorLeftTurbo;
-unsigned char motorRightTurbo;
-
-struct ST_EEPROM params;
-
+/*
+ * Constants used for battery monitoring
+ */ 
 #define VBAT_SEUIL_ALERTE		0x88
 #define VBAT_SEUIL_STOP 		0x7C
 
+/*
+ * Software version
+ * Read as FW_MAJOR_VER.FW_MINOR_VER 
+ */ 
 #define FW_MAJOR_VER			1
-#define FW_MINOR_VER			2
+#define FW_MINOR_VER			3
 
+/*
+ * Command understood by this firmware
+ */
 #define CMD_PING 				'p'
 #define CMD_RESET				'r'
 #define CMD_SET_MOTORS			'm'
@@ -69,7 +61,11 @@ struct ST_EEPROM params;
 #define CMD_GET_SENSOR 			's'
 #define CMD_GET_ODO				'o'
 #define CMD_GET_VBAT			'v'
+
+/* Commands added in version 1.1 */
 #define CMD_GET_VERSION			'V'
+
+/* Commands added in version 1.2 */
 #define CMD_SET_LEFT_NORMAL		'Y'
 #define CMD_SET_LEFT_TURBO		'y'
 #define CMD_SET_RIGHT_NORMAL	'Z'
@@ -78,47 +74,109 @@ struct ST_EEPROM params;
 #define CMD_GET_PARAMS			'G'
 #define CMD_UNSECURE_START		'u'
 
-const char OK_ANS[]="O\n";
-const char ERR_ANS[]="E\n";
+/* Commands added in version 1.3 */
+#define CMD_MOVE				'M'
+#define CMD_TURN				'T'
+#define CMD_GET_BUSY			'b'
 
+/*
+ * Constants used for motor speed
+ */
+#define MOTOR_LEFT_NORMAL		1
+#define MOTOR_LEFT_TURBO		2
+#define MOTOR_RIGHT_NORMAL		3
+#define MOTOR_RIGHT_TURBO		4
+
+/*
+ * Constant for command buffer size
+ */
+#define BUFFER_CMD_SIZE			32
+
+/**
+ * \brief Normal speed for left motor.
+ *
+ * Value used on left motor in order to get a normal speed.
+ * The value is retrieved from EEPROM in structure params
+ * @see params 
+ */
+unsigned char motorLeftNormal;
+
+/**
+ * \brief High speed for right motor.
+ *
+ * Value used on right motor in order to get a high speed.
+ * The value is retrieved from EEPROM in structure params
+ * @see params 
+ */	
+unsigned char motorRightNormal; 
+
+/**
+ * \brief Normal speed for left motor.
+ *
+ * Value used on left motor in order to get a normal speed.
+ * The value is retrieved from EEPROM in structure params
+ * @see params 
+ */
+unsigned char motorLeftTurbo;   
+
+/**
+ * \brief High speed for right motor.
+ *
+ * Value used on right motor in order to get a high speed.
+ * The value is retrieved from EEPROM in structure params
+ * @see params 
+ */
+unsigned char motorRightTurbo;  
+
+/**
+ * \brief Structure used for retrieving parameters from EEPROM.
+ *
+ * This structure is used during initialization for retrieving various parameters from EEPROM, like motor speeds 
+ * @see ST_EEPROM
+ */
+struct ST_EEPROM params;		
+
+/**
+ * \brief OK answer 
+ *
+ * String used when there were no error during a command processing 
+ */
+const char OK_ANS[]="O\n";		
+
+/**
+ * \brief Error answer 
+ *
+ * String used when an error as occurred during command processing
+ */
+const char ERR_ANS[]="E\n";   
+
+/**
+ * \brief Command buffer 
+ *
+ * Buffer used to store command received for PC or to store answer to PC
+ * Size of the buffer is set by BUFFER_CMD_SIZE constant
+ * @see BUFFER_CMD_SIZE
+ */
+unsigned char buffer_cmd[BUFFER_CMD_SIZE];
+
+/**
+ * \brief Store WDT faults
+ *
+ * @see WDT_fautes
+ */
 extern char WDT_fautes;
 
-/*
- * Fonction: init_periph
- * Initialise l'ensemble des peripheriques
- * Param. entrée: Aucun
- * Param. sortie: Aucun 
- */ 
-void init_periph(void)
-{
-	/* Recuperation des parametres en EEPROM*/
-	e2p_init();
-	
-	e2p_read(0, sizeof(struct ST_EEPROM), (unsigned char*)&params);
+/**
+ * \brief File for input and output 
+ *
+ * File used for input and output. Use USART to send or get data.
+ */
+static FILE mystdinout = FDEV_SETUP_STREAM(uart_putchar, uart_getchar,_FDEV_SETUP_RW); 
 
-	if (params.eepromVer == 0xFF) /* la table est invalide: a initialiser */
-	{
-		params.eepromVer=1;
-		params.motorLeftNormal=0x35;
-		params.motorLeftTurbo=0x70;
-		params.motorRightNormal=0x35;
-		params.motorRightTurbo=0x70;
-
-		e2p_write (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
-	}
-	
-	uart_init();
-
-	timer_init();
-
-	divers_init();
-}
-
-/*
- * Fonction: main
- * fonction principale
- * Param. entrée: Aucun
- * Param. sortie: Aucun (non utilisée)
+/**
+ * \brief Main function for dumber
+ *
+ * Main part of the program: get commands send by PC, check them, process them and send answer to PC  
  */ 
 int main (void)
 {
@@ -131,8 +189,9 @@ int odo_gauche, odo_droit;
 
 char system;
 
-	stdout = &mystdout;
-
+	stdout = &mystdinout;
+	stdin = &mystdinout;
+	
 	init_periph();
 	
 	cmd_received= 0;
@@ -390,6 +449,39 @@ char system;
 	}
 }
 
+/**
+ * \brief Initialization of micro peripherals
+ *
+ * Used for initialization of peripherals, like USART, Timers, I/O and EEPROM 
+ */ 
+void init_periph(void)
+{
+	/* Recuperation des parametres en EEPROM */
+	e2p_init();
+	e2p_read(0, sizeof(struct ST_EEPROM), (unsigned char*)&params);
+
+	if (params.eepromVer == 0xFF) /* la table est invalide: a initialiser */
+	{
+		params.eepromVer=1;
+		params.motorLeftNormal=0x35;
+		params.motorLeftTurbo=0x70;
+		params.motorRightNormal=0x35;
+		params.motorRightTurbo=0x70;
+
+		e2p_write (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
+	}
+	
+	uart_init();
+	timer_init();
+	divers_init();
+}
+
+/**
+ * \brief Miscellaneous initialization
+ *
+ * This function initialize various stuff like ADC (for battery voltage monitoring) or activity LED.
+ * There is neither input parameters nor output parameters.
+ */
 void divers_init(void)
 {
 	/* Mise en route de l'ADC pour la surveillance de la batterie */
@@ -403,6 +495,12 @@ void divers_init(void)
 	PORTB = PORTB & ~(1<<PIN0);
 }
 
+/**
+ * \brief Get battery voltage value
+ *
+ * This function is used to get battery voltage and return a level depending on this value.
+ * @return Battery level
+ */
 char etat_vbat(void)
 {
 unsigned char vbat;
@@ -425,21 +523,45 @@ unsigned char vbat;
 	else return 2;
 }
 
+/**
+ * \brief Switch on activity light
+ *
+ * This function lights on the activity light in front of the robot.
+ * There is neither input parameters nor output parameters.
+ */
 void allume_led(void)
 {
 	PORTB = PORTB | (1<<PIN0);
 }
 
+/**
+ * \brief Switch off activity light
+ *
+ * This function lights off the activity light in front of the robot.
+ * There is neither input parameters nor output parameters.
+ */
 void eteint_led(void)
 {
 	PORTB = PORTB & ~(1<<PIN0);
 }
 
+/**
+ * \brief Blinks activity light
+ *
+ * This function blinks the activity light in front of the robot.
+ * There is neither input parameters nor output parameters.
+ */
 void clignotte_led(void)
 {
 	PORTB = PORTB ^ (1<<PIN0);
 }
 
+/**
+ * \brief Get ball detection state
+ *
+ * This function is used to get ball detection state .
+ * @return Ball presence
+ */
 char etat_detection_balle(void)
 {
 unsigned char etat;
@@ -451,6 +573,12 @@ unsigned char etat;
 	return (etat);
 }
 
+/**
+ * \brief Callback called every 100 ms
+ *
+ * This callback is called every 100 ms. It is mainly used for blinking activity light and for managing power off
+ * There is neither input parameters nor output parameters.
+ */
 void callback_activite(void)
 {
 static char compteur=0;
