@@ -5,10 +5,13 @@ Project("{D1100916-62DA-4D80-A9B4-55A1E7CCEEB3}") = "dumber_as5", "dumber_as5\du
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_sim|AVR = Debug_sim|AVR
 		Debug|AVR = Debug|AVR
 		Release|AVR = Release|AVR
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9F18869B-7FC4-4D7D-8841-EEF24BA6600A}.Debug_sim|AVR.ActiveCfg = Debug_sim|AVR
+		{9F18869B-7FC4-4D7D-8841-EEF24BA6600A}.Debug_sim|AVR.Build.0 = Debug_sim|AVR
 		{9F18869B-7FC4-4D7D-8841-EEF24BA6600A}.Debug|AVR.ActiveCfg = Debug|AVR
 		{9F18869B-7FC4-4D7D-8841-EEF24BA6600A}.Debug|AVR.Build.0 = Debug|AVR
 		{9F18869B-7FC4-4D7D-8841-EEF24BA6600A}.Release|AVR.ActiveCfg = Release|AVR
