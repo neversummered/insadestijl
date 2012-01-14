@@ -52,14 +52,17 @@ void MOTORInit(void)
 	PORTB |= (1<<PIN0)+(1<<PIN2);
 	
 	/* Now activating interrupt on external change for those pins */
-	//PCMSK0 |= (1<<PCINT0)+(1<<PCINT2);
-	//PCMSK1 |= (1<<PCINT10)+(1<<PCINT11);
 	PCMSK0 |= (1<<PCINT0);
 	PCMSK1 |= (1<<PCINT10);
 	
 	PCICR |= (1<<PCIE1) + (1<<PCIE0);
 }
 
+/**
+ * \brief Reset motors
+ *
+ * Reset stuff related to motor and motor control.
+ */
 void MOTORReset(void)
 {
 	MOTORSet(MOTOR_LEFT, MOTOR_BREAK);
@@ -78,13 +81,14 @@ void MOTORReset(void)
  *
  * Change motor speed. Speed can take 5 different values.
  * @param[in] motor Identity of the motor to set. Can take values: MOTOR_LEFT, MOTEUR_DROIT
- * @param[in] cmd Speed for the motor. Can take values: MOTOR_STOP, MOTOR_FORWARD, MOTOR_REVERSE
+ * @param[in] cmd Speed for the motor. Can take values: MOTOR_STOP, MOTOR_FORWARD, MOTOR_REVERSE, MOTOR_BREAK
  * @return Status for the command: 1 = command successful, 0= speed error
  * @see MOTOR_LEFT
  * @see MOTOR_RIGHT
  * @see MOTOR_STOP
  * @see MOTOR_FORWARD 
- * @see MOTOR_REVERSE   
+ * @see MOTOR_REVERSE 
+ * @see MOTOR_BREAK   
  */
 char MOTORSet(char motor, signed char cmd)
 {
@@ -142,6 +146,11 @@ char status = 1;
 	return status;
 }
 
+/**
+ * \brief Speed counter update
+ *
+ * This function is called every 1/30Khz and is used to update speed counter for each motor
+ */
 void MOTORUpdateCounter( void )
 {
 	if (counter_left_wheel < MAX_DURATION) counter_left_wheel++;
@@ -151,7 +160,11 @@ void MOTORUpdateCounter( void )
 	else duration_right = MAX_DURATION;
 }
 
-/* Called every 1 ms */
+/**
+ * \brief Motor control function
+ *
+ * This function is called every ms and is used to control motor speed.
+ */
 void MOTORControlInterrupt(void)
 {
 	if (setpoint_left == MAX_DURATION) MOTORSet(MOTOR_LEFT, MOTOR_BREAK);
@@ -185,6 +198,11 @@ void MOTORControlInterrupt(void)
 	}	
 }
 
+/**
+ * \brief Interrupt function for left motor sensor
+ *
+ * This function is called each time the sensor of left motor produces a top
+ */
 ISR (PCINT1_vect)
 {
 	if (PINC & (1<<PIN2))
@@ -197,6 +215,11 @@ ISR (PCINT1_vect)
 	}
 }
 
+/**
+ * \brief Interrupt function for right motor sensor
+ *
+ * This function is called each time the sensor of right motor produces a top
+ */
 ISR (PCINT0_vect)
 {
 	if (PINB & (1<<PIN0))
@@ -222,6 +245,11 @@ ISR (PCINT0_vect)
 	}
 }
 
+/**
+ * \brief Start a motor
+ *
+ * Use to set speed and direction for a motor
+ */
 void MOTORWalk( char motor, int duration, char direction )
 {
 	if (motor == MOTOR_LEFT)
@@ -244,7 +272,12 @@ void MOTORWalk( char motor, int duration, char direction )
 	MOTORSet(motor, direction);
 }
 	
-//Distance en centimètres
+/**
+ * \brief Let robot move in straight line
+ *
+ * This function set a distance and robot move in straight line this distance.
+ * If distance is below 0, the move is backward
+ */
 void MOTORMove(int dist)
 {
 char dir;
@@ -287,7 +320,12 @@ unsigned int setpoint;
 	MOTORSet(MOTOR_RIGHT, dir);
 }
 
-//Angle en degrés
+/**
+ * \brief Let robot turn 
+ *
+ * This function set a distance and robot turns this distance.
+ * If distance is below 0, the turn is counterclockwise
+ */
 void MOTORTurn(int angle)
 {
 char dir_left;
@@ -326,9 +364,14 @@ unsigned int setpoint;
 	MOTORSet(MOTOR_RIGHT, dir_right);
 }
 
+/**
+ * \brief Get movement state
+ *
+ * If robot is processing a move or turn function, this function return 1, ortherwise return 0;
+ */
 char MOTORGetState( void )
 {
-	if (distance!=0) return 1;
+	if (distance!=NOT_USED) return 1;
 	else return 0;
 }
 
