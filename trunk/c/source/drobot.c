@@ -311,12 +311,48 @@ RobotStatus d_robot_get_status(struct DRobot * This) {
 }
 
 RobotStatus d_robot_move(struct DRobot * This, int range) {
-    sprintf(buffer_out, "%c=%d\r", ROBOT_CMD_MOVE, range);
+int nb_tour_moteur;
+
+	/* 
+	 * Rapport de réduction des roues 1/87
+	 * On a deux point par tour du rotor, donc 174 par tour de roue
+	 * Rayon des roues = 35mm
+	 * Circonférence = 220 mm
+	 */
+	
+	nb_tour_moteur = (range * 174) / 220;
+    sprintf(buffer_out, "%c=%d\r", ROBOT_CMD_MOVE, nb_tour_moteur);
     This->status = (d_robot_manage_cmd(This, buffer_out, buffer_in));
     return This->status;
 }
 
 RobotStatus d_robot_turn(struct DRobot * This, int angle, int direction) {
+int nb_tour_moteur;
+
+	/* Rapport de réduction des roues 1/87
+	 * On a deux point par tour du rotor, donc 174 par tour de roue
+	 * Rayon des roues = 35mm
+	 * Circonférence = 22cm
+	 * 
+	 * Empatement du robot: 100 mm
+	 * Distance de roue à parcourir pour un tour complet (360°) : 314 mm
+	 * nb de tour moteur pour un tour complet (360°) : 248 tours
+	 */
+	 
+	if (angle <0) angle = -angle;
+	
+	if (direction == HORAIRE)
+	{
+		/* Conversion de l'angle en nombre de tour moteur, pour une rotation horaire */
+		nb_tour_moteur = (angle * 248) / 360;
+	}
+	else
+	{
+		/* Conversion de l'angle en nombre de tour moteur, pour une rotation anti-horaire */
+		nb_tour_moteur = (angle * 248) / 360;
+		nb_tour_moteur = -nb_tour_moteur;
+	}
+	
     sprintf(buffer_out, "%c=%d,%d\r", ROBOT_CMD_TURN, angle, direction);
     This->status = (d_robot_manage_cmd(This, buffer_out, buffer_in));
     return This->status;

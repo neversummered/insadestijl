@@ -196,7 +196,7 @@
 */
 #define MOTEUR_AVANT_RAPIDE                     (2)
 /*! \def MOTEUR_ARRIERE_LENT
-\brief Le moteur tourne dans le sens antu-horaire lentement
+\brief Le moteur tourne dans le sens anti-horaire lentement
 */
 #define MOTEUR_ARRIERE_LENT                     (-1)
 /*! \def MOTEUR_ARRIERE_RAPIDE
