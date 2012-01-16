@@ -292,7 +292,7 @@ extern "C" {
      * par range.
      * le robot passe dans l'etat "BUSY"
      * \param This Auto-adressage du robot.
-     * \param range Distance à parcourir
+     * \param range Distance à parcourir (en mm). Si range est >0, le robot avance, si range est <0, le robot recule.
      * \return Etat de la communication :
      *  - STATUS_OK => Sortie sans erreur
      *  - STATUS_ERR_TIMEOUT => Erreur de timeout dans l'envoi de la comamnde (le robot est allumé ?)
@@ -302,11 +302,11 @@ extern "C" {
     RobotStatus d_robot_move(struct DRobot * This, int range);
 
     /** 
-     * \fn RobotStatus d_robot_turn(struct DRobot * This, int angle)
+     * \fn RobotStatus d_robot_turn(struct DRobot * This, int angle, int direction)
      * \brief Fait tourner le robot de la valeur de l'angle passe.
      * le robot passe dans l'etat "BUSY".
      * \param This Auto-adressage du robot.
-     * \param angle Angle dont le robot doit tourner.
+     * \param angle Angle dont le robot doit tourner (en degré). 
      * \param direction Sens dans lequel le robot doit tourner. Les valeurs 
      * possibles sont :
      *  - HORAIRE       0
