@@ -80,7 +80,8 @@ void TIMERInit(void)
 	/* Connecte OC1A sur le port, Regle le timer en mode fast PWM 14*/
 	TCCR1A = (1<<COM1A1)+ (1<<WGM11); 
 	TCCR1B = (1<<WGM13) + (1<<WGM12) + (1<<CS10);
-	ICR1 = 204; /* -> Permet une periode de 36000 Hz à 7372800 Hz */
+	//ICR1 = 204; /* -> Permet une periode de 36000 Hz à 7372800 Hz */
+	ICR1 = 222+1; /* -> Permet une periode de 36000 Hz à 8000000 Hz */
 	OCR1A = 5; /* set correct power */
 
 	TIMSK1 = (1<<TOIE1);
@@ -119,8 +120,7 @@ static unsigned int compteur=0;
 			{
 				DUMBERSetRobotState(STATE_DISABLED);
 				IOSwitchBallDetectOff();
-				MOTORSet(MOTOR_LEFT, MOTOR_STOP);
-				MOTORSet(MOTOR_RIGHT, MOTOR_STOP);
+				MOTORReset();
 			}
 			else
 			{
@@ -198,8 +198,7 @@ char TIMERAckWDT(void)
 			{
 				DUMBERSetRobotState(STATE_DISABLED);
 				IOSwitchBallDetectOff();
-				MOTORSet(MOTOR_LEFT, MOTOR_STOP);
-				MOTORSet(MOTOR_RIGHT, MOTOR_STOP);
+				MOTORReset();
 			}
 			else
 			{

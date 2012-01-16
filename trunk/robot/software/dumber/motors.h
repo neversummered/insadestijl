@@ -29,5 +29,6 @@ void MOTORReset(void);
 void MOTORMove(int dist);
 void MOTORTurn(int angle);
 char MOTORGetState(void);
+void MOTORUpdateCounter(void);
 
 #endif /* MOTORS_H_ */

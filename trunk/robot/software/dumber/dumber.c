@@ -79,11 +79,15 @@
  */
 #define BUFFER_CMD_SIZE			32
 
-/*
- * inactivity delay counter
+/**
+ * \brief Inactivity constant
+ *
+ * This constant set inactivity duration. Expressed in 100 ms ticks
+ * When the constant is set to -1, inactivity power off is not supported
  */
 
-#define INACTIVITY_DELAY		100 
+#define INACTIVITY_DELAY		600*2 /* About 2 minutes */
+//#define INACTIVITY_DELAY		-1
 
 /**
  * \brief Normal speed for left motor.
@@ -161,7 +165,7 @@ char low_bat;
 /**
  * \brief Inactivity counter
  *
- * When this counter reach 1200, the robot is switched off
+ * When this counter reach INACTIVITY_DELAY, the robot is switched off
  */
 
 int inactivity_counter;
@@ -242,13 +246,13 @@ int distance;
 
 		/* Battery verification */
 		battery_level = DUMBERVbatLevel();
-		if (battery_level==BAT_EMPTY)
-		{
-			/* if battery is too low, switch off robot */
-			DUMBERSetRobotState(STATE_POWER_OFF);
-			low_bat=0;
-		}
-		if (battery_level==BAT_LOW_BAT)
+		//if (battery_level==BAT_EMPTY)
+		//{
+			///* if battery is too low, switch off robot */
+			//DUMBERSetRobotState(STATE_POWER_OFF);
+			//low_bat=0;
+		//}
+		if ((battery_level==BAT_LOW_BAT)||(battery_level==BAT_EMPTY))
 		{
 			/* if battery is low, set lowbat to 1; */
 			low_bat=1;
@@ -299,8 +303,13 @@ int distance;
 					case CMD_SET_MOTORS: /* motor command: set motor speed and direction */
 						if (sscanf ((char *)ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
 						{							
-							MOTORWalk(MOTOR_LEFT, MAX_SPEED, moteur_gauche);
-							MOTORWalk(MOTOR_RIGHT, MAX_SPEED, moteur_droit);
+							if (moteur_gauche==1) MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_FORWARD);
+							else if (moteur_gauche==-1) MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_REVERSE);
+							else MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_BREAK);
+							
+							if (moteur_droit==1) MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_FORWARD);
+							else if (moteur_droit==-1) MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_REVERSE);
+							else MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_BREAK);
 							
 							printf (OK_ANS);
 						}
@@ -546,6 +555,9 @@ void DUMBERInitPeriph(void)
 	IOInit();
 	MOTORInit();
 	DUMBERInitMisc();
+	
+	/* Start Xbee */
+	IO_SET_PIN(XBEE);
 }
 
 /**
@@ -608,12 +620,15 @@ char etat;
 	}
 	
 	/* Inactivity counter */
-	inactivity_counter++;
-	
-	if (inactivity_counter>= INACTIVITY_DELAY)
+	if (INACTIVITY_DELAY != -1)
 	{
-		DUMBERSetRobotState(STATE_POWER_OFF);		
-	}
+		inactivity_counter++;
+	
+		if (inactivity_counter>= INACTIVITY_DELAY)
+		{
+			DUMBERSetRobotState(STATE_POWER_OFF);		
+		}
+	}	
 }
 
 /**
@@ -693,8 +708,7 @@ void DUMBERSetRobotState(char state)
 	if (state == STATE_POWER_OFF)
 	{
 		IOSwitchBallDetectOff();
-		MOTORSet(MOTOR_LEFT, MOTOR_STOP);
-		MOTORSet(MOTOR_RIGHT, MOTOR_STOP);
+		MOTORReset();
 		
 		/* Switch off robot */
 		IO_SET_PIN(SHUTDOWN);

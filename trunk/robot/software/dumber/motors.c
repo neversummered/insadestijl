@@ -12,7 +12,6 @@
 #include "eeprom.h"
 #include "io.h"
 
-void MOTORUpdateCounter(void);
 void MOTORStoreSpeed(char motor);
 char MOTORSet(char moteur, signed char cmd);
 
@@ -236,11 +235,11 @@ ISR (PCINT0_vect)
 				MOTORReset();				
 			}
 			
-			if (distance < MIN_DISTANCE) 
+			/*if (distance < MIN_DISTANCE) 
 			{
 				setpoint_left = MIN_SPEED;
 				setpoint_right = MIN_SPEED;				
-			}
+			}*/
 		}
 	}
 }
@@ -254,17 +253,19 @@ void MOTORWalk( char motor, int duration, char direction )
 {
 	if (motor == MOTOR_LEFT)
 	{
-		setpoint_left = duration;
-		left_direction = direction;
+		if ((direction == MOTOR_FORWARD) || (direction == MOTOR_REVERSE)) setpoint_left = duration;
+		else setpoint_left = MAX_DURATION;
 		
-		if (counter_left_wheel == MAX_DURATION) counter_left_wheel=0;
+		left_direction = direction;
+		counter_left_wheel=0;
 	}
 	else
 	{
-		setpoint_right = duration;
-		right_direction = direction;
+		if ((direction == MOTOR_FORWARD) || (direction == MOTOR_REVERSE)) setpoint_right = duration;
+		else setpoint_right = MAX_DURATION;
 		
-		if (counter_right_wheel == MAX_DURATION) counter_right_wheel=0;
+		right_direction = direction;
+		counter_right_wheel=0;
 	}
 	
 	distance = NOT_USED;
