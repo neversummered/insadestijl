@@ -32,6 +32,9 @@ unsigned int distance;
 #define MAX_DURATION	2500
 #define NOT_USED		65535
 
+#ifndef PCINT10
+	#define PCINT10	2
+#endif /* ifndef PCINT10 */
 /**
  * \brief Initialize motors
  *
@@ -209,8 +212,9 @@ ISR (PCINT1_vect)
 		duration_left = counter_left_wheel;
 		counter_left_wheel =0;
 		
-		if (duration_left < MAX_DURATION) duration_left = duration_left>>1;
-		else duration_left = MAX_DURATION;
+		/*if (duration_left < MAX_DURATION) duration_left = duration_left>>1;
+		else duration_left = MAX_DURATION;*/
+		if (duration_left > MAX_DURATION) duration_left = MAX_DURATION;
 	}
 }
 
@@ -225,6 +229,8 @@ ISR (PCINT0_vect)
 	{
 		duration_right = counter_right_wheel;
 		counter_right_wheel=0;
+		
+		if (duration_right > MAX_DURATION) duration_right = MAX_DURATION;
 		
 		if (distance != NOT_USED)
 		{
