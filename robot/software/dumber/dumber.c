@@ -29,6 +29,7 @@
 #include "dumber.h"
 #include "io.h"
 #include "motors.h"
+#include "battery.h"
 
 #include <stdio.h>
 
@@ -230,11 +231,6 @@ int distance;
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	sei();
 	
-	//MOTORWalk(MOTOR_RIGHT, 400, MOTOR_FORWARD);
-	//MOTORWalk(MOTOR_LEFT, 400, MOTOR_FORWARD);
-	
-	//MOTORMove(1000);
-	
 	while (IO_GET_PIN(PUSHBUTTON))
 	{
 		/* wait until pushbutton is released */
@@ -245,7 +241,7 @@ int distance;
 		sleep_mode();
 
 		/* Battery verification */
-		battery_level = DUMBERVbatLevel();
+		battery_level = BATTERYVbatLevel();
 		//if (battery_level==BAT_EMPTY)
 		//{
 			///* if battery is too low, switch off robot */
@@ -335,7 +331,7 @@ int distance;
 						printf ("O:%d,%d\n", odo_gauche, odo_droit);
 						break;
 					case CMD_GET_VBAT: /* voltage cmd: return voltage state */
-						printf ("O:%d\n", DUMBERVbatLevel());
+						printf ("O:%d\n", BATTERYVbatLevel());
 						break;
 					case CMD_RESET: /* reset system */
 						MOTORReset();
@@ -554,7 +550,7 @@ void DUMBERInitPeriph(void)
 	TIMERInit();
 	IOInit();
 	MOTORInit();
-	DUMBERInitMisc();
+	BATTERYInit();
 	
 	/* Start Xbee */
 	IO_SET_PIN(XBEE);
@@ -576,6 +572,9 @@ char etat;
 	compteur ++;
 	etat = DUMBERGetRobotState();
 
+	// Echantillonne la tension batterie
+	BATTERYSampleVbat();
+	 
 	switch (etat)
 	{
 	case STATE_IDLE:
@@ -629,49 +628,6 @@ char etat;
 			DUMBERSetRobotState(STATE_POWER_OFF);		
 		}
 	}	
-}
-
-/**
- * \brief Miscellaneous initialization
- *
- * This function initialize various stuff like ADC (for battery voltage monitoring) or activity LED.
- * There is neither input parameters nor output parameters.
- */
-void DUMBERInitMisc(void)
-{
-	/* Mise en route de l'ADC pour la surveillance de la batterie */
-	ADMUX = (1<<REFS0) + (1<<ADLAR) + (6<<ADMUX); /* Conversion d'ADC6, ajustement à gauche et utilisation d'AVCC comme reference */
-	ADCSRB = 0;
-	ADCSRA = (1<<ADEN) + (1<<ADATE) + (7<<ADPS0);
-	ADCSRA = ADCSRA | (1<<ADSC);
-}
-
-/**
- * \brief Get battery voltage value
- *
- * This function is used to get battery voltage and return a level depending on this value.
- * @return Battery level
- */
-char DUMBERVbatLevel(void)
-{
-unsigned char vbat;
-	/* Lire l'ADC */
-
-	vbat = (unsigned char) ADCH;
-	
-	if (vbat == 0) /* premiere conversion -> ne pas en tenir compte */
-	{
-		return BAT_NORMAL;
-	}
-	else if (vbat <VBAT_SEUIL_STOP)
-	{
-		return BAT_EMPTY;
-	}
-	else if (vbat<VBAT_SEUIL_ALERTE)
-	{
-		return BAT_LOW_BAT;
-	}
-	else return BAT_NORMAL;
 }
 
 /**

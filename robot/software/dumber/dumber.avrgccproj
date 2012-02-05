@@ -130,6 +130,12 @@
     <OutputPath>bin\Debug_sim\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="battery.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="battery.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="dumber.c">
       <SubType>compile</SubType>
     </Compile>
