@@ -14,13 +14,7 @@
 #define STATE_IDLE		2
 #define STATE_POWER_OFF 3
 
-#define BAT_NORMAL		2
-#define BAT_LOW_BAT		1
-#define BAT_EMPTY		0
-
 void DUMBERInitPeriph(void);
-void DUMBERInitMisc(void);
-char DUMBERVbatLevel(void);
 char DUMBERGetRobotState(void);
 void DUMBERSetRobotState(char state);
 void DUMBERCallbackActivity(void);
