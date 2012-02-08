@@ -242,13 +242,13 @@ int distance;
 
 		/* Battery verification */
 		battery_level = BATTERYVbatLevel();
-		//if (battery_level==BAT_EMPTY)
-		//{
-			///* if battery is too low, switch off robot */
-			//DUMBERSetRobotState(STATE_POWER_OFF);
-			//low_bat=0;
-		//}
-		if ((battery_level==BAT_LOW_BAT)||(battery_level==BAT_EMPTY))
+		if (battery_level==BAT_EMPTY)
+		{
+			/* if battery is too low, switch off robot */
+			DUMBERSetRobotState(STATE_POWER_OFF);
+			low_bat=0;
+		}
+		if (battery_level==BAT_LOW_BAT)
 		{
 			/* if battery is low, set lowbat to 1; */
 			low_bat=1;

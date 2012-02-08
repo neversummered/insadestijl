@@ -13,7 +13,8 @@
 #include "io.h"
 
 void MOTORStoreSpeed(char motor);
-char MOTORSet(char moteur, signed char cmd);
+char MOTORSet(char motor, signed char cmd);
+void MOTORIntegrator(unsigned char *cmd, unsigned int setpoint, unsigned int duration);
 
 unsigned int counter_left_wheel;
 unsigned int counter_right_wheel;
@@ -21,15 +22,21 @@ unsigned int counter_right_wheel;
 unsigned int duration_left;
 unsigned int duration_right;
 
+unsigned int last_duration_left;
+unsigned int last_duration_right;
+
 unsigned int setpoint_left;
 unsigned int setpoint_right;
 
 char left_direction;
 char right_direction;
 
+unsigned char cmd_motor_left;
+unsigned char cmd_motor_right;
+
 unsigned int distance;
 
-#define MAX_DURATION	2500
+#define MAX_DURATION	31250
 #define NOT_USED		65535
 
 #ifndef PCINT10
@@ -76,7 +83,12 @@ void MOTORReset(void)
 	setpoint_right=MAX_DURATION;
 	duration_left = MAX_DURATION;
 	duration_right = MAX_DURATION;
+	last_duration_left = MAX_DURATION;
+	last_duration_right = MAX_DURATION;
 	distance = NOT_USED;
+	
+	cmd_motor_left = 0;
+	cmd_motor_right = 0;
 }
 /**
  * \brief Change motor speed
@@ -101,20 +113,22 @@ char status = 1;
 		switch (cmd)
 		{
 			case MOTOR_STOP:
-				IO_CLEAR_PIN(MOTOR_LEFT_FORWARD);
-				IO_CLEAR_PIN(MOTOR_LEFT_REVERSE);
+				cmd_motor_left =0;
+				OCR2A = 0;
+				OCR2B = 0; 
 				break;
 			case MOTOR_REVERSE:
-				IO_CLEAR_PIN(MOTOR_LEFT_FORWARD);
-				IO_SET_PIN(MOTOR_LEFT_REVERSE);
+				OCR2A = 0;
+				OCR2B = cmd_motor_left; 
 				break;			
 			case MOTOR_FORWARD:
-				IO_SET_PIN(MOTOR_LEFT_FORWARD);
-				IO_CLEAR_PIN(MOTOR_LEFT_REVERSE);
+				OCR2A = cmd_motor_left;
+				OCR2B = 0; 
 				break;
 			case MOTOR_BREAK:
-				IO_SET_PIN(MOTOR_LEFT_FORWARD);
-				IO_SET_PIN(MOTOR_LEFT_REVERSE);
+				cmd_motor_left =0;
+				OCR2A = 0xFF;
+				OCR2B = 0xFF; 
 				break;
 			default:
 				status = 0;
@@ -125,20 +139,22 @@ char status = 1;
 		switch (cmd)
 		{
 			case MOTOR_STOP:
-				IO_CLEAR_PIN(MOTOR_RIGHT_FORWARD);
-				IO_CLEAR_PIN(MOTOR_RIGHT_REVERSE);
+				cmd_motor_right =0;
+				OCR0A = 0;
+				OCR0B = 0;
 				break;
 			case MOTOR_REVERSE:
-				IO_CLEAR_PIN(MOTOR_RIGHT_FORWARD);
-				IO_SET_PIN(MOTOR_RIGHT_REVERSE);
+				OCR0A = cmd_motor_right;
+				OCR0B = 0;
 				break;			
 			case MOTOR_FORWARD:
-				IO_SET_PIN(MOTOR_RIGHT_FORWARD);
-				IO_CLEAR_PIN(MOTOR_RIGHT_REVERSE);
+				OCR0A = 0;
+				OCR0B = cmd_motor_right;
 				break;
 			case MOTOR_BREAK:
-				IO_SET_PIN(MOTOR_RIGHT_FORWARD);
-				IO_SET_PIN(MOTOR_RIGHT_REVERSE);
+				cmd_motor_right = 0;
+				OCR0A = 0xFF;
+				OCR0B = 0xFF;
 				break;
 			default:
 				status = 0;
@@ -163,40 +179,47 @@ void MOTORUpdateCounter( void )
 }
 
 /**
+ * \brief Integrator function
+ *
+ * This function compute difference between setpoint and current motor speed, 
+ * and then add this difference to an integrator for each motor command.
+ */
+void MOTORIntegrator(unsigned char *cmd, unsigned int setpoint, unsigned int duration)
+{
+signed int diff;
+signed cmd_temp;
+
+	diff = (signed int)(duration - setpoint); /* si duration > setpoint, le moteur va plus lentement que voulu => diff > 0 */
+	
+	if ((diff>0) && ((diff>>5)>16)) diff = 16<<5;
+	else if ((diff<0) && ((diff>>5)<-16)) diff = (-16)<<5;
+	cmd_temp = (signed int)*cmd +(diff>>5);
+	
+	/* Saturation */
+	if (cmd_temp>=0xFF) *cmd=0xFF;
+	else if (cmd_temp<=0) *cmd=0;
+	else *cmd = (unsigned char)cmd_temp;	
+}
+	
+/**
  * \brief Motor control function
  *
- * This function is called every ms and is used to control motor speed.
+ * This function is called every 10 ms and is used to control motor speed.
  */
 void MOTORControlInterrupt(void)
 {
 	if (setpoint_left == MAX_DURATION) MOTORSet(MOTOR_LEFT, MOTOR_BREAK);
 	else
 	{
-		if (left_direction == MOTOR_FORWARD)
-		{
-			if (duration_left > setpoint_left) MOTORSet(MOTOR_LEFT, MOTOR_FORWARD); /* motor speed is below setpoint => increase speed */
-			else MOTORSet(MOTOR_LEFT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
-		}
-		else
-		{
-			if (duration_left > setpoint_left) MOTORSet(MOTOR_LEFT, MOTOR_REVERSE); /* motor speed is below setpoint => increase speed */
-			else MOTORSet(MOTOR_LEFT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
-		}
+		MOTORIntegrator(&cmd_motor_left, setpoint_left, duration_left);
+		MOTORSet(MOTOR_LEFT, left_direction);
 	}	
 	
 	if (setpoint_right == MAX_DURATION) MOTORSet(MOTOR_RIGHT, MOTOR_BREAK);
 	else
 	{
-		if (right_direction == MOTOR_FORWARD)
-		{
-			if (duration_right > setpoint_right) MOTORSet(MOTOR_RIGHT, MOTOR_FORWARD); /* motor speed is below setpoint => increase speed */
-			else MOTORSet(MOTOR_RIGHT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
-		}
-		else
-		{
-			if (duration_right > setpoint_right) MOTORSet(MOTOR_RIGHT, MOTOR_REVERSE); /* motor speed is below setpoint => increase speed */
-			else MOTORSet(MOTOR_RIGHT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
-		}
+		MOTORIntegrator(&cmd_motor_right, setpoint_right, duration_right);
+		MOTORSet(MOTOR_RIGHT, right_direction);
 	}	
 }
 
@@ -207,14 +230,20 @@ void MOTORControlInterrupt(void)
  */
 ISR (PCINT1_vect)
 {
+unsigned int duration;
+	
 	if (PINC & (1<<PIN2))
 	{
-		duration_left = counter_left_wheel;
+		duration = counter_left_wheel;
 		counter_left_wheel =0;
 		
-		/*if (duration_left < MAX_DURATION) duration_left = duration_left>>1;
-		else duration_left = MAX_DURATION;*/
-		if (duration_left > MAX_DURATION) duration_left = MAX_DURATION;
+		if (duration > MAX_DURATION) duration_left = MAX_DURATION;
+		else
+		{
+			duration_left = duration + last_duration_left;
+			duration_left = duration_left>>1;
+			last_duration_left = duration;	
+		}
 	}
 }
 
@@ -225,12 +254,20 @@ ISR (PCINT1_vect)
  */
 ISR (PCINT0_vect)
 {
+unsigned int duration;
+	
 	if (PINB & (1<<PIN0))
 	{
-		duration_right = counter_right_wheel;
-		counter_right_wheel=0;
+		duration = counter_right_wheel;
+		counter_right_wheel =0;
 		
-		if (duration_right > MAX_DURATION) duration_right = MAX_DURATION;
+		if (duration > MAX_DURATION) duration_right = MAX_DURATION;
+		else
+		{
+			duration_right = duration + last_duration_right;
+			duration_right = duration_right>>1;
+			last_duration_right = duration;	
+		}
 		
 		if (distance != NOT_USED)
 		{
@@ -240,12 +277,6 @@ ISR (PCINT0_vect)
 			{
 				MOTORReset();				
 			}
-			
-			/*if (distance < MIN_DISTANCE) 
-			{
-				setpoint_left = MIN_SPEED;
-				setpoint_right = MIN_SPEED;				
-			}*/
 		}
 	}
 }
