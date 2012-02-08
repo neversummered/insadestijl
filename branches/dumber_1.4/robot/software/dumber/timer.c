@@ -86,12 +86,25 @@ void TIMERInit(void)
 
 	TIMSK1 = (1<<TOIE1);
 
-	TCCR0A = (0<<WGM00);
+	/* Reglage du Timer 0 (8 bits), canal A et B en fast PWM */
+	/* Utilisation pour controler le moteur 1 (Gauche) */
+	/* Reglage pour une periode de 8000000/256 -> 31250 Hz */
+	TCCR0A = (1<<COM0A1) + (1<<COM0B1) + (3<<WGM00);
 	TCCR0B = (1<<CS00);
+	OCR0A = 0;
+	OCR0B = 0;
 
-	DDRD = DDRD | (1<<PIN5) | (1<<PIN6);
+	//Activation des IT 31250 Hz */
 
 	TIMSK0 = (1<<TOIE0);
+	
+	/* Reglage du Timer 2 (8 bits), canal A et B en fast PWM */
+	/* Utilisation pour controler le moteur 2 (Droit) */
+	/* Reglage pour une periode de 8000000/256 -> 31250 Hz */
+	TCCR2A = (1<<COM2A1) + (1<<COM2B1) + (3<<WGM20);
+	TCCR2B = (1<<CS20);
+	OCR2A = 0;
+	OCR2B = 0;
 	
 	/* Watchdog */
 	WDT_compteur = 0;
@@ -142,21 +155,22 @@ static unsigned int compteur=0;
 /**
  * \brief Interruption handler for timer 0
  *
- * Interruption handler of timer 1 called every (7372800/128) => ms. Used as main timing functionalities.   
+ * Interruption handler of timer 1 called every 8000000/256 -> 31250 Hz. Used as main timing functionalities.   
  */
 ISR(TIMER0_OVF_vect, ISR_BLOCK)
 {
 static unsigned int compteur=0;
 
-	/* Called every interrupt */
-	MOTORUpdateCounter();
-	
 	compteur++;
+		
+	/* Called every 0.5ms interrupt */
+	MOTORUpdateCounter();	
 	
-	if (compteur>=29)
+	if (compteur>=312)
 	{
 		compteur=0;
-		/* called only every 1 ms for regulating purpose */
+		
+		/* called only every 10 ms for regulating purpose */
 		MOTORControlInterrupt();
 	}		
 }
