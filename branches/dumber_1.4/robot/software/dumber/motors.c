@@ -191,9 +191,9 @@ signed cmd_temp;
 
 	diff = (signed int)(duration - setpoint); /* si duration > setpoint, le moteur va plus lentement que voulu => diff > 0 */
 	
-	if ((diff>0) && ((diff>>5)>16)) diff = 16<<5;
-	else if ((diff<0) && ((diff>>5)<-16)) diff = (-16)<<5;
-	cmd_temp = (signed int)*cmd +(diff>>5);
+	if ((diff>0) && ((diff>>6)>8)) diff = 8<<6;
+	else if ((diff<0) && ((diff>>6)<-8)) diff = (-8)<<6;
+	cmd_temp = (signed int)*cmd +(diff>>6);
 	
 	/* Saturation */
 	if (cmd_temp>=0xFF) *cmd=0xFF;
