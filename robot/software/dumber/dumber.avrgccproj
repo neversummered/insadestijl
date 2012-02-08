@@ -21,11 +21,11 @@
       <ToolNumber>070000002207</ToolNumber>
       <Channel>
         <host>127.0.0.1</host>
-        <port>52741</port>
+        <port>62386</port>
         <ssl>False</ssl>
       </Channel>
       <ToolOptions>
-        <InterfaceName>JTAG</InterfaceName>
+        <InterfaceName>debugWIRE</InterfaceName>
         <InterfaceProperties>
           <JtagDbgClock>1000000</JtagDbgClock>
           <JtagProgClock>1000000</JtagProgClock>
@@ -47,13 +47,13 @@
     <MakeDirPath />
     <preserveEEPROM>True</preserveEEPROM>
     <com_atmel_avrdbg_tool_simulator>
-      <ToolType xmlns="">com.atmel.avrdbg.tool.simulator</ToolType>
-      <ToolName xmlns="">AVR Simulator</ToolName>
-      <ToolNumber xmlns="">
+      <ToolType>com.atmel.avrdbg.tool.simulator</ToolType>
+      <ToolName>AVR Simulator</ToolName>
+      <ToolNumber>
       </ToolNumber>
-      <Channel xmlns="">
+      <Channel>
         <host>127.0.0.1</host>
-        <port>59320</port>
+        <port>62386</port>
         <ssl>False</ssl>
       </Channel>
     </com_atmel_avrdbg_tool_simulator>
