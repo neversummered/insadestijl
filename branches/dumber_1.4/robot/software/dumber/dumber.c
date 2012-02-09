@@ -44,7 +44,7 @@
  * Read as FW_MAJOR_VER.FW_MINOR_VER 
  */ 
 #define FW_MAJOR_VER			1
-#define FW_MINOR_VER			3
+#define FW_MINOR_VER			4
 
 /*
  * Command understood by this firmware
