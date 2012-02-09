@@ -113,22 +113,20 @@ char status = 1;
 		switch (cmd)
 		{
 			case MOTOR_STOP:
-				cmd_motor_left =0;
-				OCR2A = 0;
-				OCR2B = 0; 
+				IO_CLEAR_PIN(MOTOR_LEFT_FORWARD);
+				IO_CLEAR_PIN(MOTOR_LEFT_REVERSE);
 				break;
 			case MOTOR_REVERSE:
-				OCR2A = 0;
-				OCR2B = cmd_motor_left; 
+				IO_CLEAR_PIN(MOTOR_LEFT_FORWARD);
+				IO_SET_PIN(MOTOR_LEFT_REVERSE);
 				break;			
 			case MOTOR_FORWARD:
-				OCR2A = cmd_motor_left;
-				OCR2B = 0; 
+				IO_SET_PIN(MOTOR_LEFT_FORWARD);
+				IO_CLEAR_PIN(MOTOR_LEFT_REVERSE);
 				break;
 			case MOTOR_BREAK:
-				cmd_motor_left =0;
-				OCR2A = 0xFF;
-				OCR2B = 0xFF; 
+				IO_SET_PIN(MOTOR_LEFT_FORWARD);
+				IO_SET_PIN(MOTOR_LEFT_REVERSE);
 				break;
 			default:
 				status = 0;
@@ -139,22 +137,20 @@ char status = 1;
 		switch (cmd)
 		{
 			case MOTOR_STOP:
-				cmd_motor_right =0;
-				OCR0A = 0;
-				OCR0B = 0;
+				IO_CLEAR_PIN(MOTOR_RIGHT_FORWARD);
+				IO_CLEAR_PIN(MOTOR_RIGHT_REVERSE);
 				break;
 			case MOTOR_REVERSE:
-				OCR0A = cmd_motor_right;
-				OCR0B = 0;
+				IO_CLEAR_PIN(MOTOR_RIGHT_FORWARD);
+				IO_SET_PIN(MOTOR_RIGHT_REVERSE);
 				break;			
 			case MOTOR_FORWARD:
-				OCR0A = 0;
-				OCR0B = cmd_motor_right;
+				IO_SET_PIN(MOTOR_RIGHT_FORWARD);
+				IO_CLEAR_PIN(MOTOR_RIGHT_REVERSE);
 				break;
 			case MOTOR_BREAK:
-				cmd_motor_right = 0;
-				OCR0A = 0xFF;
-				OCR0B = 0xFF;
+				IO_SET_PIN(MOTOR_RIGHT_FORWARD);
+				IO_SET_PIN(MOTOR_RIGHT_REVERSE);
 				break;
 			default:
 				status = 0;
@@ -211,15 +207,31 @@ void MOTORControlInterrupt(void)
 	if (setpoint_left == MAX_DURATION) MOTORSet(MOTOR_LEFT, MOTOR_BREAK);
 	else
 	{
-		MOTORIntegrator(&cmd_motor_left, setpoint_left, duration_left);
-		MOTORSet(MOTOR_LEFT, left_direction);
+		if (left_direction == MOTOR_FORWARD)
+		{
+			if (duration_left > setpoint_left) MOTORSet(MOTOR_LEFT, MOTOR_FORWARD); /* motor speed is below setpoint => increase speed */
+			else MOTORSet(MOTOR_LEFT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
+		}
+		else
+		{
+			if (duration_left > setpoint_left) MOTORSet(MOTOR_LEFT, MOTOR_REVERSE); /* motor speed is below setpoint => increase speed */
+			else MOTORSet(MOTOR_LEFT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
+		}
 	}	
 	
 	if (setpoint_right == MAX_DURATION) MOTORSet(MOTOR_RIGHT, MOTOR_BREAK);
 	else
 	{
-		MOTORIntegrator(&cmd_motor_right, setpoint_right, duration_right);
-		MOTORSet(MOTOR_RIGHT, right_direction);
+		if (right_direction == MOTOR_FORWARD)
+		{
+			if (duration_right > setpoint_right) MOTORSet(MOTOR_RIGHT, MOTOR_FORWARD); /* motor speed is below setpoint => increase speed */
+			else MOTORSet(MOTOR_RIGHT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
+		}
+		else
+		{
+			if (duration_right > setpoint_right) MOTORSet(MOTOR_RIGHT, MOTOR_REVERSE); /* motor speed is below setpoint => increase speed */
+			else MOTORSet(MOTOR_RIGHT, MOTOR_STOP); /* motor speed is above setpoint => decrease speed */
+		}
 	}	
 }
 
