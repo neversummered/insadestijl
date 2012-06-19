@@ -45,7 +45,7 @@ char WDT_faults;
  * This constant is equal to a time of 950ms.
  * @see WDT_compteur
  */
-#define SEUIL_MIN_WDT	34800
+#define SEUIL_MIN_WDT	34200
 
 /**
  * \brief High level counter for WDT 
@@ -125,7 +125,7 @@ static unsigned int compteur=0;
 			else
 			{
 				WDT_faults++;
-				WDT_compteur =0;	
+				WDT_compteur = WDT_compteur - 36000; /* on recharge le compteur avec la difference par rapport à 1s */ 	
 			}
 		}
 	}
@@ -208,8 +208,8 @@ char TIMERAckWDT(void)
 		}
 		else 
 		{
-			if (WDT_faults !=0) WDT_faults--;
-			WDT_compteur =0;
+			WDT_faults=0; /* RAZ du compteur de fautes */
+			//WDT_compteur =0;
 		}
 	}	
 
