@@ -45,6 +45,8 @@ unsigned char UART_RX_BufferIndex;
  */
 unsigned char UART_RX_BufferLength;
 
+unsigned char UARTChecksum;
+
 /**
  * \brief Baud rate constant
  *
@@ -69,6 +71,8 @@ void UARTInit(void)
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0);
 	/* Set frame format: 8data, 1stop bit */
 	UCSR0C = (3<<UCSZ00);
+	
+	UARTChecksum=0;
 } 
 
 /**
@@ -81,7 +85,19 @@ void UARTInit(void)
  */
 int uart_putchar(char c, FILE *stream)
 {
-	UARTPutchar(c);
+	if (c!='\n')
+	{
+		UARTChecksum = UARTChecksum ^ (unsigned char)c;	
+		UARTPutchar(c);	
+	}
+	else
+	{
+		if (UARTChecksum == '\n') UARTChecksum = UARTChecksum +1;
+		UARTPutchar(UARTChecksum);
+		UARTPutchar(c);
+		
+		UARTChecksum =0;
+	}
 	
 	return 1;	
 }

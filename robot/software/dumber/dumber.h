@@ -24,5 +24,5 @@ char DUMBERVbatLevel(void);
 char DUMBERGetRobotState(void);
 void DUMBERSetRobotState(char state);
 void DUMBERCallbackActivity(void);
-
+char DUMBERVerifyChecksum(unsigned char *ptr);
 #endif /* DUMBER_H_ */

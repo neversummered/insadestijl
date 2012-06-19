@@ -31,6 +31,7 @@
 #include "motors.h"
 
 #include <stdio.h>
+#include <string.h>
 
 /*
  * Constants used for battery monitoring
@@ -43,7 +44,7 @@
  * Read as FW_MAJOR_VER.FW_MINOR_VER 
  */ 
 #define FW_MAJOR_VER			1
-#define FW_MINOR_VER			3
+#define FW_MINOR_VER			5
 
 /*
  * Command understood by this firmware
@@ -189,6 +190,12 @@ static FILE mystdinout = FDEV_SETUP_STREAM(uart_putchar, uart_getchar,_FDEV_SETU
  */
 char ROBOT_State;
 
+
+volatile int length;
+volatile int i;
+volatile unsigned char checksum;
+volatile unsigned char *ptr_loc;
+
 /**
  * \brief Main function for dumber
  *
@@ -246,12 +253,13 @@ int distance;
 
 		/* Battery verification */
 		battery_level = DUMBERVbatLevel();
-		//if (battery_level==BAT_EMPTY)
-		//{
-			///* if battery is too low, switch off robot */
-			//DUMBERSetRobotState(STATE_POWER_OFF);
-			//low_bat=0;
-		//}
+		if (battery_level==BAT_EMPTY)
+		{
+			/* if battery is too low, switch off robot */
+			DUMBERSetRobotState(STATE_POWER_OFF);
+			low_bat=0;
+		}
+		
 		if ((battery_level==BAT_LOW_BAT)||(battery_level==BAT_EMPTY))
 		{
 			/* if battery is low, set lowbat to 1; */
@@ -278,6 +286,7 @@ int distance;
 			case '\r':
 				*ptr_cmd = 0;
 				cmd_received = 1;
+				break;
 			default:
 				*ptr_cmd = c;
 				ptr_cmd ++;	
@@ -290,240 +299,248 @@ int distance;
 			cmd_received=0;
 			inactivity_counter =0;
 			
-			system = DUMBERGetRobotState();
-			
-			switch (system)
+			/* verification du checksum */
+			if (DUMBERVerifyChecksum(ptr_cmd)!=0) /* checksum failed */
 			{
-			case STATE_RUNNING:
-				switch (*ptr_cmd)
-				{
-					case CMD_PING: /* ping command: check if robot is on */
-						printf (OK_ANS);
-						break;
-					case CMD_SET_MOTORS: /* motor command: set motor speed and direction */
-						if (sscanf ((char *)ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
-						{							
-							if (moteur_gauche==1) MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_FORWARD);
-							else if (moteur_gauche==-1) MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_REVERSE);
-							else MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_BREAK);
-							
-							if (moteur_droit==1) MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_FORWARD);
-							else if (moteur_droit==-1) MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_REVERSE);
-							else MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_BREAK);
-							
-							printf (OK_ANS);
-						}
-						else
-						{
-							printf (ERR_ANS);
-						} 
-						break;
-					case CMD_RESET_WATCHDOG: /* reset watchdog */
-						if (TIMERAckWDT() == STATE_DISABLED)
-						{
-							printf (ERR_ANS);
-						}
-						else
-						{
-							printf ("O:%d\n",WDT_faults);
-						}
-						break;
-					case CMD_GET_SENSOR: /* sensor cmd: return sensor state */
-						printf ("O:%d\n",IO_GET_PIN(BALL_DETECT));
-						break;
-					case CMD_GET_ODO: /* odometers cmd: return odometers */
-						printf ("O:%d,%d\n", odo_gauche, odo_droit);
-						break;
-					case CMD_GET_VBAT: /* voltage cmd: return voltage state */
-						printf ("O:%d\n", DUMBERVbatLevel());
-						break;
-					case CMD_RESET: /* reset system */
-						MOTORReset();
-						
-						odo_gauche=0;
-						odo_droit=0;
-						
-						TIMERResetWDT();
-						printf (OK_ANS);
-						break;
-					case CMD_GET_VERSION: /* return FW version */
-						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
-						break;
-					case CMD_SET_LEFT_NORMAL: /* set motor left speed normal*/
-						if (sscanf ((char *)ptr_cmd, "Y=%u", (unsigned int*)&params.motorLeftNormal)==1)
-						{
-							printf (OK_ANS);
-						}
-						else
-						{
-							printf (ERR_ANS);
-						}
-						break;
-					case CMD_SET_LEFT_TURBO: /* set motor left speed turbo */
-						if (sscanf ((char *)ptr_cmd, "y=%u", (unsigned int*)&params.motorLeftTurbo)==1)
-						{
-							printf (OK_ANS);
-						}
-						else
-						{
-							printf (ERR_ANS);
-						}
-						break;
-					case CMD_SET_RIGHT_NORMAL: /* set motor right speed normal*/
-						if (sscanf ((char *)ptr_cmd, "Z=%u", (unsigned int*)&params.motorRightNormal)==1)
-						{
-							printf (OK_ANS);
-						}
-						else
-						{
-							printf (ERR_ANS);
-						}
-						break;
-					case CMD_SET_RIGHT_TURBO: /* set motor right speed turbo*/
-						if (sscanf ((char *)ptr_cmd, "z=%u", (unsigned int*)&params.motorRightTurbo)==1)
-						{
-							printf (OK_ANS);	
-						}
-						else
-						{
-							printf (ERR_ANS);
-						}
-						break;	
-					case CMD_RECORD_PARAMS: /* record params */
-						printf (OK_ANS);
-						E2PWrite (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
-						break;
-					case CMD_GET_PARAMS:
-						printf ("O:%u,%u,%u,%u\n",params.motorLeftNormal,params.motorLeftTurbo,
-						                          params.motorRightNormal,params.motorRightTurbo);
-						break;
-					case CMD_START_WATCHDOG:    /* start watchdog */
-					case CMD_UNSECURE_START:    /* start insecurely*/
-						printf (ERR_ANS); /* Commande non autorisée */
-						break;
-					case CMD_MOVE:
-						if (sscanf ((char *)ptr_cmd, "M=%i", &distance)==1)
-						{							
-							MOTORMove(distance);
-							
-							printf (OK_ANS);
-						}
-						else
-						{
-							printf (ERR_ANS);
-						} 
-						break;
-					case CMD_TURN:
-						if (sscanf ((char *)ptr_cmd, "T=%i", &distance)==1)
-						{							
-							MOTORTurn(distance);
-							
-							printf (OK_ANS);
-						}
-						else
-						{
-							printf (ERR_ANS);
-						} 
-						break;
-					case CMD_GET_BUSY:
-						printf ("O:%d\n", MOTORGetState());
-						break;
-					default: /* unknown cmd */
-						printf ("C:%c\n",*ptr_cmd);	
-						break;
-				}				
-				break;
-			case STATE_IDLE:
-				switch (*ptr_cmd)
-				{
-					case CMD_PING: /* ping command: check if robot is on */
-						printf (OK_ANS);
-						break;
-					case CMD_START_WATCHDOG: /* start watchdog */
-						TIMERStartSystem(WITH_WDT);
-						printf (OK_ANS);
-						break;
-					case CMD_UNSECURE_START: /* start insecurely*/
-						TIMERStartSystem(WITHOUT_WDT);
-						printf (OK_ANS);
-						break;
-					case CMD_RESET: /* reset system */
-						MOTORReset();
-						
-						odo_gauche=0;
-						odo_droit=0;
-						
-						TIMERResetWDT();
-						printf (OK_ANS);
-						break;
-					case CMD_GET_VERSION: /* return FW version */
-						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
-						break;
-					case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
-					case CMD_RESET_WATCHDOG: 	/* reset watchdog */
-					case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
-					case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
-					case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
-					case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
-					case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
-					case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
-					case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
-					case CMD_RECORD_PARAMS: 	/* record params */
-					case CMD_GET_PARAMS:		/* get params */
-					case CMD_MOVE:
-					case CMD_TURN:
-					case CMD_GET_BUSY:
-						printf (ERR_ANS); /* Commande non autorisée */
-						break;
-					default: /* unknown cmd */
-						printf ("C:%c\n",*ptr_cmd);	
-						break;
-				}					
-				break;
-			default:
-				 /*		DUMBERGetRobotState() == STATE_DISABLED	=> Systeme inactif (du au WDT) 
-			      ||	DUMBERGetRobotState() == STATE_LOW_BAT		=> Batterie trop faible   
-				  */
-				switch (*ptr_cmd)
-				{
-					case CMD_PING: /* ping command: check if robot is on */
-						printf (OK_ANS);
-						break;
-					case CMD_RESET: /* reset system */
-						MOTORReset();
-						
-						odo_gauche=0;
-						odo_droit=0;
-						
-						TIMERResetWDT();
-						printf (OK_ANS);
-						break;
-					case CMD_GET_VERSION: /* return FW version */
-						printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
-						break;
-					case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
-					case CMD_START_WATCHDOG: 	/* start watchdog */
-					case CMD_UNSECURE_START:    /* start insecurely */
-					case CMD_RESET_WATCHDOG: 	/* reset watchdog */
-					case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
-					case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
-					case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
-					case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
-					case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
-					case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
-					case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
-					case CMD_RECORD_PARAMS: 	/* record params */
-					case CMD_GET_PARAMS:		/* get params */
-					case CMD_MOVE:
-					case CMD_TURN:
-					case CMD_GET_BUSY:
-						printf (ERR_ANS); /* Commande non autorisée */
-						break;
-					default: /* unknown cmd */
-						printf ("C:%c\n",*ptr_cmd);	
-						break;
-				}				
+				printf ("S\n");
 			}
+			else
+			{
+				system = DUMBERGetRobotState();
+			
+				switch (system)
+				{
+				case STATE_RUNNING:
+					switch (*ptr_cmd)
+					{
+						case CMD_PING: /* ping command: check if robot is on */
+							printf (OK_ANS);
+							break;
+						case CMD_SET_MOTORS: /* motor command: set motor speed and direction */
+							if (sscanf ((char *)ptr_cmd, "m=%i,%i", &moteur_gauche, &moteur_droit)==2)
+							{							
+								if (moteur_gauche==1) MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_FORWARD);
+								else if (moteur_gauche==-1) MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_REVERSE);
+								else MOTORWalk(MOTOR_LEFT, MAX_SPEED, MOTOR_BREAK);
+							
+								if (moteur_droit==1) MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_FORWARD);
+								else if (moteur_droit==-1) MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_REVERSE);
+								else MOTORWalk(MOTOR_RIGHT, MAX_SPEED, MOTOR_BREAK);
+							
+								printf (OK_ANS);
+							}
+							else
+							{
+								printf (ERR_ANS);
+							} 
+							break;
+						case CMD_RESET_WATCHDOG: /* reset watchdog */
+							if (TIMERAckWDT() == STATE_DISABLED)
+							{
+								printf (ERR_ANS);
+							}
+							else
+							{
+								printf ("O:%d\n",WDT_faults);
+							}
+							break;
+						case CMD_GET_SENSOR: /* sensor cmd: return sensor state */
+							printf ("O:%d\n",IO_GET_PIN(BALL_DETECT));
+							break;
+						case CMD_GET_ODO: /* odometers cmd: return odometers */
+							printf ("O:%d,%d\n", odo_gauche, odo_droit);
+							break;
+						case CMD_GET_VBAT: /* voltage cmd: return voltage state */
+							printf ("O:%d\n", DUMBERVbatLevel());
+							break;
+						case CMD_RESET: /* reset system */
+							MOTORReset();
+						
+							odo_gauche=0;
+							odo_droit=0;
+						
+							TIMERResetWDT();
+							printf (OK_ANS);
+							break;
+						case CMD_GET_VERSION: /* return FW version */
+							printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
+							break;
+						case CMD_SET_LEFT_NORMAL: /* set motor left speed normal*/
+							if (sscanf ((char *)ptr_cmd, "Y=%u", (unsigned int*)&params.motorLeftNormal)==1)
+							{
+								printf (OK_ANS);
+							}
+							else
+							{
+								printf (ERR_ANS);
+							}
+							break;
+						case CMD_SET_LEFT_TURBO: /* set motor left speed turbo */
+							if (sscanf ((char *)ptr_cmd, "y=%u", (unsigned int*)&params.motorLeftTurbo)==1)
+							{
+								printf (OK_ANS);
+							}
+							else
+							{
+								printf (ERR_ANS);
+							}
+							break;
+						case CMD_SET_RIGHT_NORMAL: /* set motor right speed normal*/
+							if (sscanf ((char *)ptr_cmd, "Z=%u", (unsigned int*)&params.motorRightNormal)==1)
+							{
+								printf (OK_ANS);
+							}
+							else
+							{
+								printf (ERR_ANS);
+							}
+							break;
+						case CMD_SET_RIGHT_TURBO: /* set motor right speed turbo*/
+							if (sscanf ((char *)ptr_cmd, "z=%u", (unsigned int*)&params.motorRightTurbo)==1)
+							{
+								printf (OK_ANS);	
+							}
+							else
+							{
+								printf (ERR_ANS);
+							}
+							break;	
+						case CMD_RECORD_PARAMS: /* record params */
+							printf (OK_ANS);
+							E2PWrite (0, sizeof(struct ST_EEPROM), (unsigned char*) &params);
+							break;
+						case CMD_GET_PARAMS:
+							printf ("O:%u,%u,%u,%u\n",params.motorLeftNormal,params.motorLeftTurbo,
+													  params.motorRightNormal,params.motorRightTurbo);
+							break;
+						case CMD_START_WATCHDOG:    /* start watchdog */
+						case CMD_UNSECURE_START:    /* start insecurely*/
+							printf (ERR_ANS); /* Commande non autorisée */
+							break;
+						case CMD_MOVE:
+							if (sscanf ((char *)ptr_cmd, "M=%i", &distance)==1)
+							{							
+								MOTORMove(distance);
+							
+								printf (OK_ANS);
+							}
+							else
+							{
+								printf (ERR_ANS);
+							} 
+							break;
+						case CMD_TURN:
+							if (sscanf ((char *)ptr_cmd, "T=%i", &distance)==1)
+							{							
+								MOTORTurn(distance);
+							
+								printf (OK_ANS);
+							}
+							else
+							{
+								printf (ERR_ANS);
+							} 
+							break;
+						case CMD_GET_BUSY:
+							printf ("O:%d\n", MOTORGetState());
+							break;
+						default: /* unknown cmd */
+							printf ("C:%c\n",*ptr_cmd);	
+							break;
+					}				
+					break;
+				case STATE_IDLE:
+					switch (*ptr_cmd)
+					{
+						case CMD_PING: /* ping command: check if robot is on */
+							printf (OK_ANS);
+							break;
+						case CMD_START_WATCHDOG: /* start watchdog */
+							TIMERStartSystem(WITH_WDT);
+							printf (OK_ANS);
+							break;
+						case CMD_UNSECURE_START: /* start insecurely*/
+							TIMERStartSystem(WITHOUT_WDT);
+							printf (OK_ANS);
+							break;
+						case CMD_RESET: /* reset system */
+							MOTORReset();
+						
+							odo_gauche=0;
+							odo_droit=0;
+						
+							TIMERResetWDT();
+							printf (OK_ANS);
+							break;
+						case CMD_GET_VERSION: /* return FW version */
+							printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
+							break;
+						case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
+						case CMD_RESET_WATCHDOG: 	/* reset watchdog */
+						case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
+						case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
+						case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
+						case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
+						case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
+						case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
+						case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
+						case CMD_RECORD_PARAMS: 	/* record params */
+						case CMD_GET_PARAMS:		/* get params */
+						case CMD_MOVE:
+						case CMD_TURN:
+						case CMD_GET_BUSY:
+							printf (ERR_ANS); /* Commande non autorisée */
+							break;
+						default: /* unknown cmd */
+							printf ("C:%c\n",*ptr_cmd);	
+							break;
+					}					
+					break;
+				default:
+					 /*		DUMBERGetRobotState() == STATE_DISABLED	=> Systeme inactif (du au WDT) 
+					  ||	DUMBERGetRobotState() == STATE_LOW_BAT		=> Batterie trop faible   
+					  */
+					switch (*ptr_cmd)
+					{
+						case CMD_PING: /* ping command: check if robot is on */
+							printf (OK_ANS);
+							break;
+						case CMD_RESET: /* reset system */
+							MOTORReset();
+						
+							odo_gauche=0;
+							odo_droit=0;
+						
+							TIMERResetWDT();
+							printf (OK_ANS);
+							break;
+						case CMD_GET_VERSION: /* return FW version */
+							printf ("O:%d,%d\n", FW_MAJOR_VER, FW_MINOR_VER);
+							break;
+						case CMD_SET_MOTORS: 		/* motor command: set motor speed and dir */
+						case CMD_START_WATCHDOG: 	/* start watchdog */
+						case CMD_UNSECURE_START:    /* start insecurely */
+						case CMD_RESET_WATCHDOG: 	/* reset watchdog */
+						case CMD_GET_SENSOR: 		/* sensor cmd: return sensor state */	
+						case CMD_GET_ODO: 			/* odometrie cmd: return odometrie */
+						case CMD_GET_VBAT: 			/* voltage cmd: return voltage state */
+						case CMD_SET_LEFT_NORMAL: 	/* set motor left speed normal*/
+						case CMD_SET_LEFT_TURBO: 	/* set motor left speed turbo */
+						case CMD_SET_RIGHT_NORMAL: 	/* set motor right speed normal*/
+						case CMD_SET_RIGHT_TURBO: 	/* set motor right speed turbo*/
+						case CMD_RECORD_PARAMS: 	/* record params */
+						case CMD_GET_PARAMS:		/* get params */
+						case CMD_MOVE:
+						case CMD_TURN:
+						case CMD_GET_BUSY:
+							printf (ERR_ANS); /* Commande non autorisée */
+							break;
+						default: /* unknown cmd */
+							printf ("C:%c\n",*ptr_cmd);	
+							break;
+					}				
+				}
+			}			
 		}
 	}
 }
@@ -715,3 +732,22 @@ void DUMBERSetRobotState(char state)
 	}	
 }
 
+char DUMBERVerifyChecksum(unsigned char *ptr)
+{
+
+
+	ptr_loc = ptr;
+	checksum =0;
+	length = strlen ((const char*)ptr);
+	
+	for(i=0; i<length-1; i++)
+	{
+		checksum = checksum ^ *ptr_loc;	
+		ptr_loc++;		
+	}
+	
+	if (checksum=='\n') checksum = checksum +1;
+	checksum = checksum ^ *ptr_loc;
+	
+	return checksum;
+}
