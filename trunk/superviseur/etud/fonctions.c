@@ -164,10 +164,10 @@ int write_in_queue(RT_QUEUE *msgQueue, void * data, int size) {
     void *msg;
     int err;
 
-    msg = rt_queue_alloc(&msgQueue, size);
+    msg = rt_queue_alloc(msmsgQueue, size);
     memcpy(msg, &data, size);
 
-    if ((err = rt_queue_send(&msgQueue, msg, sizeof (DMessage), Q_NORMAL)) < 0) {
+    if ((err = rt_queue_send(msgQueue, msg, sizeof (DMessage), Q_NORMAL)) < 0) {
         rt_printf("Error msg queue send: %s\n", strerror(-err));
     }
     rt_queue_free(&queueMsgGUI, msg);
