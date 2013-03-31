@@ -3,6 +3,7 @@
  *
  *  Created on: 18 janv. 2011
  *      Author: P.E. Hladik
+ * 01/04/13 : PEH correction affichage de l'arene
  */
 
 #include "../headers/dimageshop.h"
@@ -24,17 +25,22 @@ void d_imageshop_draw_position(DImage *img, DPosition *pos) {
 
 void drawBox(DImage *img, CvBox2D box) {
     CvPoint2D32f box_vtx[4];
-    CvPoint pt, pt0;
+    CvPoint p [4] ;
+	p[0] = cvPoint(box.center.x - box.size.width/2, box.center.y - box.size.height/2);
+	p[1] = cvPoint(box.center.x - box.size.width/2, box.center.y + box.size.height/2);
+	p[2] = cvPoint(box.center.x + box.size.width/2, box.center.y + box.size.height/2);
+	p[3] = cvPoint(box.center.x + box.size.width/2, box.center.y - box.size.height/2);
     int i;
-
+	
     if (box.size.height != 0) {
         cvBoxPoints(box, box_vtx); // Finds box vertices
         for (i = 0; i < 4; i++) {
-            pt0.x = cvRound(box_vtx[i].x);
+/*            pt0.x = cvRound(box_vtx[i].x);
             pt0.y = cvRound(box_vtx[i].y);
             pt.x = cvRound(box_vtx[(i + 1) % 4].x);
             pt.y = cvRound(box_vtx[(i + 1) % 4].y);
-            cvLine(img->myiplimg, pt0, pt, CV_RGB(0, 255, 0), 5, CV_AA, 0);
+            cvLine(img->myiplimg, pt0, pt, CV_RGB(0, 255, 0), 5, CV_AA, 0);*/
+			cvLine(img->myiplimg, p[i], p[(i+1) %4], CV_RGB(0, 255, 0), 5, CV_AA, 0);
         }
     }
 }
