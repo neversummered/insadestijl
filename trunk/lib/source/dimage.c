@@ -9,8 +9,8 @@
  * Correction J. Marchand de d_image_polar_conversion, utilisation de atan2
  * Modification 20/02/2013 PEH : calcul du threshold pour la detection de l'arene
  * 01/04/2013 PEH : modification de l'orientation de l'arene (ceci est un patch mal 
- * foutu traitant le problème sans le comprendre)
- *
+ * foutu traitant le problème sans le comprendre) + correction dans l'utilisation de
+ * l'arene pour le calcul de la position.
  */
 
 #include "../headers/dimage.h"
@@ -150,14 +150,16 @@ DPosition* d_image_compute_robot_position(DImage *This, DArena *arena) {
     //showIplImage(imgSrc, "Image source");
     //printf("debug1.0.1\n");
 	
+	/* Recadrage de l'image sur l'arene */
     if (arena != NULL) {
         d_tools_cvbox2cvrect(arena->box, &rectmp);
         cvSetImageROI(imgSrc, rectmp);
     }
-    /*Sous √©chantillonage de l'image*/
+    /*Sous echantillonage de l'image*/
     imgResized = d_image_resize_with_factor(arena, imgSrc, imageFactor);
     //showIplImage(imgResized, "Image resized");
     //printf("debug1.0.2\n");
+	
     /*Filtre sur l'image*/
     imgBinarized = d_image_hard_filter(imgResized,
 									   filterThreshold,
@@ -165,24 +167,41 @@ DPosition* d_image_compute_robot_position(DImage *This, DArena *arena) {
 									   nbIterErode);
     //showIplImage(imgBinarized, "Image binarized");
     //printf("debug1.0.3\n");
-    /* Recherche du ROI*/
+	
+    /* Recherche du ROI autour du robot*/
     d_image_find_ROI(imgBinarized,
 					 &roi,
 					 imageFactor,
 					 robotHeihtReference,
 					 robotWidthReference,
 					 robotFactorReference);
-    //printf("ROI{x:%i,y:%i,h:%i,w:%i}", roi.x, roi.y,roi.height,roi.width);
+    //printf("find ROI{x:%i,y:%i,h:%i,w:%i}\n", roi.x, roi.y, roi.height, roi.width);
     //printf("debug1.0.4\n");
-    /* Suppression de l'ancien ROI*/
 	
+	/*DImage * dimage = d_new_image();
+	d_image_set_ipl(dimage, imgSrc);
+	drawRec(dimage, roi);
+	showImage(dimage, "Img with roi");*/
+	
+    /* Suppression de l'ancien ROI*/	
     if (arena != NULL) {
         d_image_free_ROI(imgSrc, tmpVecPosition, roi);
+		//showIplImage(imgSrc, "free ROI");
         //printf("debug1.0.5\n");
         roi.x += rectmp.x;
         roi.y += rectmp.y;
     }
+	
+	/* Test pour savoir si le robot trouvé est bien dans l'image */
+	if (!(roi.x + roi.height < imgSrc->width &&
+		roi.y + roi.width < imgSrc->height))
+	{
+		printf("Robot not found\n");
+		return NULL;
+	}
+	
     /*Application du ROI sur l'image source*/
+    //printf("new ROI{x:%i,y:%i,h:%i,w:%i}", roi.x, roi.y, roi.height, roi.width);
     d_image_apply_ROI(imgSrc, &roi);
     //showIplImage(imgSrc, "ROI");
     //printf("debug1.0.6\n");
@@ -297,6 +316,9 @@ DArena* d_image_compute_arena_position(DImage *This) {
         box.size.height = box.size.height*imageFactor;
         box.size.width = box.size.width*imageFactor;
 		
+		// ATTENTION : Hack pour contourner les problèmes de recherche de contours et 
+		// mettre dans le bon sens les boites que l'on trouve, mais ça n'explique en 
+		// rien le problème
 		if (box.size.height > box.size.width){
 			float tmp = box.size.height;
 			box.size.height = box.size.width;
@@ -321,8 +343,8 @@ IplImage * d_image_resize_with_factor(DArena *arena, IplImage *imgSrc, int image
     if (arena != NULL) {
         img = cvCreateImage(
 							cvSize(
-								   (int) (arena->get_height(arena) / imageFactor),
-								   (int) (arena->get_width(arena) / imageFactor)),
+								   (int) (arena->get_width(arena) / imageFactor),
+								   (int) (arena->get_height(arena) / imageFactor)),
 							imgSrc->depth,
 							imgSrc->nChannels);
 		
@@ -494,7 +516,7 @@ int d_image_find_position_points(IplImage* roiBinarized, CvPoint2D32f spots[3]) 
     }
     cvReleaseMemStorage(&storage);
     if (cmpt != 3) {
-        printf("ERROR spots\n");
+        //printf("ERROR spots\n");
         return 0;
     } else {
         return 1;

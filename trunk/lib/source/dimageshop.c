@@ -26,31 +26,9 @@ void d_imageshop_draw_position(DImage *img, DPosition *pos) {
 void drawBox(DImage *img, CvBox2D box) {
 	CvRect rect;
 	d_tools_cvbox2cvrect(box, &rect);
-	printf("x:%d y:%d h:%d w%d version:%d.%d\n", rect.x, rect.y, rect.height, rect.width, CV_MAJOR_VERSION,
-		   CV_MINOR_VERSION);
+	//printf("x:%d y:%d h:%d w%d version:%d.%d\n", rect.x, rect.y, rect.height, rect.width, CV_MAJOR_VERSION,
+	//	   CV_MINOR_VERSION);
 	drawRec(img, rect);
-	
-	/*CvPoint p [4] ;
-	p[0] = cvPoint(box.center.x - box.size.width/2, box.center.y - box.size.height/2);
-	p[1] = cvPoint(box.center.x - box.size.width/2, box.center.y + box.size.height/2);
-	p[2] = cvPoint(box.center.x + box.size.width/2, box.center.y + box.size.height/2);
-	p[3] = cvPoint(box.center.x + box.size.width/2, box.center.y - box.size.height/2);*/
-    /*CvPoint2D32f box_vtx[4];
-    CvPoint pt0, pt;
-
-    int i;
-	
-    if (box.size.height != 0) {
-        cvBoxPoints(box, box_vtx); // Finds box vertices
-        for (i = 0; i < 4; i++) {
-			pt0.x = cvRound(box_vtx[i].x);
-            pt0.y = cvRound(box_vtx[i].y);
-            pt.x = cvRound(box_vtx[(i + 1) % 4].x);
-            pt.y = cvRound(box_vtx[(i + 1) % 4].y);
-            cvLine(img->myiplimg, pt0, pt, CV_RGB(0, 255, 0), 5, CV_AA, 0);
-			//cvLine(img->myiplimg, p[i], p[(i+1) %4], CV_RGB(0, 255, 0), 5, CV_AA, 0);
-        }
-    }*/
 }
 
 void drawRec(DImage *img, CvRect rect) {

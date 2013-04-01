@@ -21,17 +21,24 @@ int main(int argc, char** argv) {
 		d_image_set_ipl(p0, imgSrc);
 		cvReleaseImage(&imgSrc);
 		p0->print(p0);
-		//showImage(p0, "Img");
+		showImage(p0, "Img");
 		
 		DArena* p1 = d_image_compute_arena_position(p0);
-		
 		if (p1 != NULL) {
 			p1->print(p1);
 			d_imageshop_draw_arena(p0, p1);
 			showImage(p0, "arene");
-			//DPosition* p2 = d_image_compute_robot_position(p0, p1);
 		} else {
 			printf("Pas d'arene\n");
+		}
+		
+		DPosition* p2 = d_image_compute_robot_position(p0, p1);
+		if (p2 != NULL) {
+			p2->print(p2);
+			d_imageshop_draw_position(p0, p2);
+			showImage(p0, "Position");
+		} else {
+			printf("Pas de position trouvee\n");
 		}
 	}
     return 0;
