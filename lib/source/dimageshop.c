@@ -26,10 +26,8 @@ void d_imageshop_draw_position(DImage *img, DPosition *pos) {
 void drawBox(DImage *img, CvBox2D box) {
 	CvRect rect;
 	d_tools_cvbox2cvrect(box, &rect);
-	printf("x:%d y:%d version:%d.%d\n", rect.x, rect.y, CV_MAJOR_VERSION,
+	printf("x:%d y:%d h:%d w%d version:%d.%d\n", rect.x, rect.y, rect.height, rect.width, CV_MAJOR_VERSION,
 		   CV_MINOR_VERSION);
-	//cvRectangle( img, cvPoint(rect.x, rect.y), cvPoint(rect.x+rect.width, rect.y+ rect.height),
-	//			CV_RGB(0, 255, 0), 5, CV_AA, 0 );
 	drawRec(img, rect);
 	
 	/*CvPoint p [4] ;
