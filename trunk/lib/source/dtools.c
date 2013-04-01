@@ -37,14 +37,10 @@ unsigned int d_tools_bytes2int(char *b) {
 }
 
 void d_tools_cvbox2cvrect(CvBox2D box, CvRect *rect) {
-    CvPoint2D32f box_vtx[4];
-    cvBoxPoints(box, box_vtx);
-
-    rect->x = box_vtx[3].x;
-    rect->y = box_vtx[0].y;
-    rect->height = abs(box_vtx[0].y - box_vtx[2].y);
-    rect->width = abs(box_vtx[1].x - box_vtx[3].x);
-
+	rect->x = box.center.x - box.size.width/2;
+	rect->y = box.center.y - box.size.height/2;
+    rect->height = box.size.height;
+    rect->width = box.size.width;
 }
 
 long long d_tools_get_time_in_millisec() {
