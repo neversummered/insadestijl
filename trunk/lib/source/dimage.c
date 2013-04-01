@@ -8,6 +8,8 @@
  * Impl√©mentation de la classe DImage
  * Correction J. Marchand de d_image_polar_conversion, utilisation de atan2
  * Modification 20/02/2013 PEH : calcul du threshold pour la detection de l'arene
+ * 01/04/2013 PEH : modification de l'orientation de l'arene (ceci est un patch mal 
+ * foutu traitant le problème sans le comprendre)
  *
  */
 
@@ -294,6 +296,12 @@ DArena* d_image_compute_arena_position(DImage *This) {
         box.center.y = box.center.y*imageFactor;
         box.size.height = box.size.height*imageFactor;
         box.size.width = box.size.width*imageFactor;
+		
+		if (box.size.height < box.size.width){
+			float tmp = box.size.height;
+			box.size.height = box.size.width;
+			box.size.width = tmp;
+		}
 		
         arena = d_new_arena();
         d_arena_set(arena,
