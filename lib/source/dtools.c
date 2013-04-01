@@ -6,6 +6,7 @@
  * \date 29 novembre 2011
  *
  * Implémentation des outils de conversions
+ * 01/04/2013 PEH : réécriture de d_tools_cvbox2cvrect 
  *
  */
 
