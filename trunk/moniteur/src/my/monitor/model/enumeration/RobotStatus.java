@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package monitor.model.enumeration;
+package my.monitor.model.enumeration;
 
 /**
  *
@@ -11,7 +11,7 @@ package monitor.model.enumeration;
  */
 public enum RobotStatus {
     UNKNOWN,
-    WAIT,
+    WAIT_CONNEXION,
     CONNECTED,
     ROBOT_STATUS_ERR_NO_FILE,
     ROBOT_STATUS_ERR_TIMEOUT,

@@ -3,11 +3,11 @@
  * and open the template in the editor.
  */
 
-package monitor.model.enumeration;
+package my.monitor.model.enumeration;
 
 
-import monitor.tools.Converter;
-import monitor.tools.Converter;
+import my.monitor.tools.Converter;
+import my.monitor.tools.Converter;
 /**
  *
  * @author pehladik
