@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package monitor.model.enumeration;
+package my.monitor.model.enumeration;
 
 /**
  *
