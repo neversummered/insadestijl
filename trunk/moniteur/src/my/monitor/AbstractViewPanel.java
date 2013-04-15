@@ -10,7 +10,6 @@
 package my.monitor;
 
 import java.beans.PropertyChangeEvent;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 /**

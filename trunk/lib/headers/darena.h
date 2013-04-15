@@ -44,7 +44,7 @@ extern "C" {
 
     /**
      * \fn void d_arena_free(DArena *This)
-     * \brief Fonction pour désallouer un instance de l'objet DArena.
+     * \brief Fonction pour désallouer une instance de l'objet DArena.
      * \param This Auto-adressage de l'objet à désallouer.
      */
     void d_arena_free(DArena *This);

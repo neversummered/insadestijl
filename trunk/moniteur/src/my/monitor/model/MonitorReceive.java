@@ -3,7 +3,7 @@ package my.monitor.model;
 import java.awt.Image;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
+import java.util.Date;
 import javax.swing.ImageIcon;
 import my.monitor.model.enumeration.RobotMissionStatus;
 
@@ -73,6 +73,7 @@ public final class MonitorReceive extends Thread {
                     size_read += model.getIs().read(payload, size_read, size - size_read);                                   /* Lecture des données */
 
                 }
+                Message message = new Message(" ", " ", Message.reception, new Date());
                 if (DEBUG) {
                     System.out.println("Message recu de type " + type);
                 }
@@ -80,21 +81,28 @@ public final class MonitorReceive extends Thread {
                     img = new ImageIcon(payload).getImage();
                     System.out.println(modelImg);
                     modelImg.setImage(new ImageIcon(img));
+                    message.setType("image");
                 } else if (type == 'P') {                                          /* Données reçues de type position */
                     modelImg.setPosition(new MyPosition(payload));
+                    message.setType("position");
                 } else if (type == 'R') {
                     int robot_status = ByteBuffer.wrap(payload).getInt();
                     model.setRobotStatus(robot_status);
+                    message.setType("état de la communication avec le robot");
                 } else if (type == 'B') {
                     int vbat = ByteBuffer.wrap(payload).getInt();
                     model.setBatteryLevel(vbat);
+                    message.setType("état de la batterie");
                 } else if (type == 'T') { /*Mission accomplie*/
                     int number = ByteBuffer.wrap(payload).getInt();
                     model.setMissionStatus(RobotMissionStatus.MISSION_FINISHED);
+                    message.setType("mission terminée");
                 } else if (type == 'F') { /* Version */
                     String st = new String(payload);
                     model.setVersion(st);
+                    message.setType("version");
                 }
+                model.setMessage(message);
             }
 
         } catch (IOException e) {

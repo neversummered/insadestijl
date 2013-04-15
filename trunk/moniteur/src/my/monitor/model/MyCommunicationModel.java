@@ -12,6 +12,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +55,13 @@ public class MyCommunicationModel extends AbstractModel {
     VideoStatus videoStatus = VideoStatus.VIDEO_UNKNOWN;
     MyLevel batteryLevel = MyLevel.UNKNOWN;
     MyMode mode = MyMode.NO_CONTROL;
-    String version = "2.1.4";
+    String version = "2.1.5 (beta)";
+    /**
+     * Log
+     */
+    ArrayList<Message> listMsg = new ArrayList<Message>();
+    public static String MESSAGE_NULL = " ";
+    public static String MESSAGE_RESET = "RESET";
 
     public String getVersion() {
         return version;
@@ -97,7 +105,7 @@ public class MyCommunicationModel extends AbstractModel {
                 Logger.getLogger(MyCommunicationModel.class.getName()).log(Level.SEVERE, null, ex1);
             }
         }
-        
+
         try {
             prop.load(fileProperties);
             String st = prop.getProperty("port");
@@ -113,6 +121,30 @@ public class MyCommunicationModel extends AbstractModel {
         setMove(new Movement(MyDirection.FORWARD, 50));
         setDirection(MyDirection.STOP);
         setDemarrageRapide(Boolean.valueOf(false));
+        setMessage(null);
+    }
+
+    public void setMessage(Message message) {
+        if (DEBUG) {
+            System.out.println("Màj log " + message);
+        }
+        Message oldMessage = null;
+        
+        if (message == null) {
+            if (!listMsg.isEmpty()) {
+                oldMessage = listMsg.get(listMsg.size() - 1);
+                listMsg.clear();
+            }
+            firePropertyChange(MyController.MESSAGE, oldMessage, message);
+        } else {
+            if (!listMsg.isEmpty()) {
+                oldMessage = listMsg.get(listMsg.size() - 1);
+            }
+            listMsg.add(message);
+            firePropertyChange(MyController.MESSAGE, oldMessage, message);
+        }
+
+
     }
 
     public void setCommStatus(CommunicationStatus commStatus) {
@@ -273,6 +305,7 @@ public class MyCommunicationModel extends AbstractModel {
         if ((newRobotStatus == RobotStatus.WAIT_CONNEXION)
                 && (old != RobotStatus.CONNECTED)) {
             sendData(Order.ACTION_CONNECT_ROBOT.toByte());
+            setMessage(new Message("demande de connexion", " ", Message.envoi, new Date()));
         }
         if (robStatus == RobotStatus.UNKNOWN) {
             setMissionStatus(RobotMissionStatus.NO_MISSION);
@@ -401,10 +434,12 @@ public class MyCommunicationModel extends AbstractModel {
             MyMission mission = new MyMission(missionNumber, MissionType.REACH_COORDINATE);
             mission.setPosition((int) objective.x, (int) objective.y, 0);
             sendData(mission.toByte());
+            setMessage(new Message("mission", " ", Message.envoi, new Date()));
         } else if (missionStatus == RobotMissionStatus.MISSION_STOP) {
             MyMission mission = new MyMission(missionNumber, MissionType.STOP);
             mission.setPosition(0, 0, 0);
             sendData(mission.toByte());
+            setMessage(new Message("terminer la mission", " ", Message.envoi, new Date()));
         }
         firePropertyChange(MyController.CHANGE_ROBOT_MISSION_STATUS, old, missionStatus);
     }
@@ -471,7 +506,7 @@ public class MyCommunicationModel extends AbstractModel {
 
     public void setVersion(String newVersion) {
         if (DEBUG) {
-            System.out.println("Changement de mode " + newVersion);
+            System.out.println("Version " + newVersion);
         }
 
         String oldVersion = this.version;

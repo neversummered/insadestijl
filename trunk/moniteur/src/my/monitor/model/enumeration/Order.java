@@ -5,8 +5,6 @@
 
 package my.monitor.model.enumeration;
 
-
-import my.monitor.tools.Converter;
 import my.monitor.tools.Converter;
 /**
  *
