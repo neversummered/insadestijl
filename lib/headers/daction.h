@@ -42,7 +42,7 @@ extern "C" {
 
     /**
      * \fn void d_action_free(DAction*)
-     * \brief Fonction pour désallouer un instance de l'objet DAction.
+     * \brief Fonction pour désallouer une instance de l'objet DAction.
      * \param This Auto-adressage de l'objet à désallouer.
      */
     void d_action_free(DAction *This);

@@ -174,7 +174,7 @@ extern "C" {
     /** 
      * \fn RobotStatus d_robot_reload_wdt(struct DRobot * This)
      * \brief Remet le watchdog a zero.
-     * Le watchdog doit etre remit à zero entre 450 ms et 550 ms, trop tôt ou
+     * Le watchdog doit etre remit à zero entre 900 ms et 1100 ms, trop tôt ou
      *  trop tard ce n'est pas bon.
      * <b>Remarque:</b> si le robot a été lancé avec la commande RobotStartInsecurely, cette commande
      * est sans effet.

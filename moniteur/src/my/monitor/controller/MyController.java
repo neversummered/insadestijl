@@ -39,6 +39,7 @@ public class MyController extends AbstractController {
     public static final String CHANGE_ROBOT_MISSION_STATUS = "MissionStatus";
     public static final String CHANGE_DEMARRAGE = "DemarrageRapide";
     public static final String VERSION = "Version";
+    public static final String MESSAGE = "Message";
     
     /**
      * Change Image
@@ -96,6 +97,10 @@ public class MyController extends AbstractController {
     
     public void changeVersion(String newVersion) {
         setModelProperty(VERSION, newVersion);
+    }
+    
+    public void changeMessage(String newMessage) {
+        setModelProperty(MESSAGE, newMessage);
     }
     
 }

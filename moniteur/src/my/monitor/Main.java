@@ -29,17 +29,19 @@ public class Main {
         MyImagePanel viewImage = new MyImagePanel(controller);
         MyComRobotPanel viewComRobot = new MyComRobotPanel(controller);
         MyControlRobotPanel viewControl = new MyControlRobotPanel(controller);
+        MyLoggerPanel viewLogger = new MyLoggerPanel(controller);
 
         controller.addView(view);
         controller.addView(viewImage);
         controller.addView(viewComRobot);
         controller.addView(viewControl);
+        controller.addView(viewLogger);
 
         controller.addModel(model);
         controller.addModel(modelImg);
 
-        model.initDefault(8000, "localhost");
         modelImg.initDefault();
+        model.initDefault(8000, "localhost");
 
         JFrame displayFrame = new JFrame("Moniteur DeStijl (v"+ model.getVersion() + ")");
         displayFrame.getContentPane().setPreferredSize(new Dimension(1110, 710));
@@ -63,13 +65,18 @@ public class Main {
         displayFrame.getContentPane().add(viewControl);
         size = viewControl.getPreferredSize();
         viewControl.setBounds(padding+680 + insets.left, padding+100+ insets.top, size.width, size.height);
-
+        
+        displayFrame.getContentPane().add(viewLogger);
+        size = viewControl.getPreferredSize();
+        viewLogger.setBounds(padding+680 + insets.left, padding+440+ insets.top, size.width, size.height);
+        
         displayFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         displayFrame.pack();
         viewComRobot.setVisible(false);
         viewImage.setVisible(false);
         viewControl.setVisible(false);
+        viewLogger.setVisible(true);
 
         displayFrame.setVisible(true);
 

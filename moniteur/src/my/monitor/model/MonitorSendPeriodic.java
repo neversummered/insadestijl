@@ -1,5 +1,7 @@
 package my.monitor.model;
 
+import java.util.Date;
+
 
 public final class MonitorSendPeriodic extends Thread {
 
@@ -26,6 +28,7 @@ public final class MonitorSendPeriodic extends Thread {
 
             if (model.getMove() != null) {
                 model.sendData(model.getMove().toByte());
+                model.setMessage(new Message("mouvement", " ", Message.envoi, new Date()));
             }
 
             try {
