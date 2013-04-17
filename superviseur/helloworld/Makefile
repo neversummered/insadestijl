@@ -2,18 +2,18 @@ CC=gcc
 LINK=g++
 CFLAGS=-I/usr/xenomai/include
 CFLAGS_SRC=-I/usr/xenomai/include
-OBJ=main.o
+OBJ=hello.o
 LIB=
 
 all: main
 
 
-main: $(OBJ) 
-	$(LINK) -lxenomai -lnative -lrtdk -L/usr/xenomai/lib $(OBJ) $(OBJ_SRC) -o hello
+main: $(OBJ)
+        $(LINK) -lxenomai -lnative -L/usr/xenomai/lib $(OBJ) $(OBJ_SRC) -o hello
 
 
-main.o: main.c
-	$(CC) -g -Wall $(CFLAGS) -c main.c -o main.o
+hello.o: hello.c
+        $(CC) -g -Wall $(CFLAGS) -c hello.c -o hello.o
 
 clean:
-	rm -f $(OBJ) $(OBJ_SRC) robot
+        rm -f $(OBJ) $(OBJ_SRC) hello
