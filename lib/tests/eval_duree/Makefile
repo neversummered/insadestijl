@@ -1,27 +1,30 @@
 CC=gcc
 LINK=g++
-CFLAGS=-I./../../headers
-CFLAGS_SRC=-I./../../headers/
-OBJ= main.o
-OBJ_SRC=./../../source/*.o
-LIB=
 
-all: main
+CFLAGS= -g -Wall -I./../../headers
 
-main: $(OBJ) 
-	ifdef RASPBERRY
-		$(LINK) -lopencv -lopencvcore -lopencvhighgui $(OBJ) $(OBJ_SRC) -o evalduree
-	else
-		$(LINK) -lcv -lcxcore -lhighgui $(OBJ) $(OBJ_SRC) -o evalduree
-	endif
+SOURCES=main.c $(wildcard ./../../source/*.c)
+OBJECTS=$(SOURCES:.c=.o)
 
-main.o: main.c dimage.o
-	$(CC) -g -Wall $(CFLAGS) -c main.c -o main.o
+EXECUTABLE=evalduree
 
-dimage.o: ./../../source/dimage.c ./../../headers/dimageshop.h ./../../headers/dtools.h  
-	cd ../../source; echo "entering source"; \
-	$(CC) -g -Wall $(CFLAGS_SRC)  -c *.c
-	cd ..
+ifndef (CIBLE)
+	CIBLE=toto
+endif
+ifeq ($(CIBLE),raspberry)
+	LIB=-lopencv_core -lopencv_highgui -lopencv_imgproc
+else
+	LIB=-lcv -lcxcore -lhighgui
+endif
+
+all: $(OBJECTS) 
+		$(LINK) $(LIB) $(OBJECTS) -o $(EXECUTABLE)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $<;
 
 clean:
-	rm -f $(OBJ) $(OBJ_SRC) image
+	rm -rf $(OBJECTS)
+
+mrproper: clean
+	rm -rf $(EXECUTABLE)
