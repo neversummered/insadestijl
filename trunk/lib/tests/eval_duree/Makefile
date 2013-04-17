@@ -9,7 +9,11 @@ LIB=
 all: main
 
 main: $(OBJ) 
-	$(LINK) -lcv -lcxcore -lhighgui $(OBJ) $(OBJ_SRC) -o evalduree
+	ifdef RASPBERRY
+		$(LINK) -lopencv -lopencvcore -lopencvhighgui $(OBJ) $(OBJ_SRC) -o evalduree
+	else
+		$(LINK) -lcv -lcxcore -lhighgui $(OBJ) $(OBJ_SRC) -o evalduree
+	endif
 
 main.o: main.c dimage.o
 	$(CC) -g -Wall $(CFLAGS) -c main.c -o main.o
