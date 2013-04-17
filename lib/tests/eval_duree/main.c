@@ -9,7 +9,7 @@
 #include <stdlib.h> 
 #include "../headers/dincludes.h"
 
-#define MAX_NBE 100
+#define MAX_NBE 1000
 
 
 double moyenne(long long mesures[MAX_NBE], int nbe);
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	DCamera* camera;
     DImage* img = d_new_image();
     int i = 0;
-	int nbe;
+	int nbe = MAX_NBE;
 	
     DArena* arena = NULL;
 	
@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
  	*****************************/
 	if (real) {
 		printf("Evalution du temps pour d_camera_get_frame\n");
-		for (i = 0; i < MAX_NBE; i++) {
+		for (i = 0; i < nbe; i++) {
 			t1 = d_tools_get_time_in_millisec();
 			d_camera_get_frame(camera, img);
 			t2 = d_tools_get_time_in_millisec();
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 	 d_image_compute_arena_position
 	 *****************************/
 	printf("Evalution du temps pour d_image_compute_arena_position\n");
-    for (i = 0; i < MAX_NBE; i++) {
+    for (i = 0; i < nbe; i++) {
         if (real) d_camera_get_frame(camera, img);
         t1 = d_tools_get_time_in_millisec();
         d_image_compute_arena_position(img);
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 	 *****************************/
 	printf("Evalution du temps pour d_image_compute_robot_position sans arene\n");
 	arena = NULL;
-    for (i = 0; i < MAX_NBE; i++) {
+    for (i = 0; i < nbe; i++) {
         if (real) d_camera_get_frame(camera, img);
         t1 = d_tools_get_time_in_millisec();
         d_image_compute_robot_position(img, arena);
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 		if (i > 10) exit(EXIT_FAILURE);
 	}
 	
-    for (i = 0; i < MAX_NBE; i++) {
+    for (i = 0; i < nbe; i++) {
         if (real) d_camera_get_frame(camera, img);
         t1 = d_tools_get_time_in_millisec();
         d_image_compute_robot_position(img, arena);
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
 	 *****************************/
 	printf("Evalution du temps pour d_jpegimage_compress\n");
     DJpegimage* jpeg = d_new_jpegimage();
-    for (i = 0; i < MAX_NBE; i++) {
+    for (i = 0; i < nbe; i++) {
         if (real) d_camera_get_frame(camera, img);
         t1 = d_tools_get_time_in_millisec();
         d_jpegimage_compress(jpeg, img);
