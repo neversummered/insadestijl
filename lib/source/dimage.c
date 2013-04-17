@@ -5,12 +5,13 @@
  * \version 0.1.2
  * \date 10 mai 2012
  *
- * Impl√©mentation de la classe DImage
+ * Impl√ementation de la classe DImage
  * Correction J. Marchand de d_image_polar_conversion, utilisation de atan2
  * Modification 20/02/2013 PEH : calcul du threshold pour la detection de l'arene
  * 01/04/2013 PEH : modification de l'orientation de l'arene (ceci est un patch mal 
  * foutu traitant le problème sans le comprendre) + correction dans l'utilisation de
  * l'arene pour le calcul de la position.
+ * 17/04/2013 PEH : correction d'une grosse fuite mémoire dans find_arena
  */
 
 #include "../headers/dimage.h"
@@ -240,17 +241,12 @@ DPosition* d_image_compute_robot_position(DImage *This, DArena *arena) {
 }
 
 DArena* d_image_compute_arena_position(DImage *This) {
-    //CvPoint2D32f tmpVecPosition;
-    //CvPoint2D32f tmpVecOrientation;
+    DArena *arena = NULL;
 	
-    IplImage *imgSrc;
+	IplImage *imgSrc;
     IplImage *imgResized;
     IplImage *imgBinarized;
-	
-    //CvRect roi;
-	
-    //CvPoint2D32f spots[3];
-	
+		
     /* Parameters */
     int imageFactor = 2;
     int filterThreshold = 200;
@@ -262,7 +258,6 @@ DArena* d_image_compute_arena_position(DImage *This) {
     nbIterErode = 2;
     nbIterDilate = 3;
 	
-    DArena *arena = NULL;
 	
     /*Copie de travail de l'image */
     imgSrc = cvCloneImage(This->myiplimg);
@@ -325,7 +320,8 @@ DArena* d_image_compute_arena_position(DImage *This) {
 			box.size.width = tmp;
 		}
 		
-        arena = d_new_arena();
+        d_arena_free(arena);
+		arena = d_new_arena();
         d_arena_set(arena,
 					box.center.x,
 					box.center.y,
@@ -333,6 +329,11 @@ DArena* d_image_compute_arena_position(DImage *This) {
 					box.size.width,
 					0.0);
     }
+
+	if (imgSrc != NULL) cvReleaseImage(&imgSrc);
+	if (imgResized != NULL) cvReleaseImage(&imgResized);
+	if (imgBinarized != NULL) cvReleaseImage(&imgBinarized);
+	
     return arena;
 	
 }
