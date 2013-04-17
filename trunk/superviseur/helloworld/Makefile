@@ -9,11 +9,11 @@ all: main
 
 
 main: $(OBJ)
-        $(LINK) -lxenomai -lnative -L/usr/xenomai/lib $(OBJ) $(OBJ_SRC) -o hello
+	$(LINK) -lxenomai -lnative -L/usr/xenomai/lib $(OBJ) $(OBJ_SRC) -o hello
 
 
 hello.o: hello.c
-        $(CC) -g -Wall $(CFLAGS) -c hello.c -o hello.o
+	$(CC) -g -Wall $(CFLAGS) -c hello.c -o hello.o
 
 clean:
-        rm -f $(OBJ) $(OBJ_SRC) hello
+	rm -f $(OBJ) $(OBJ_SRC) hello
