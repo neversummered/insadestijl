@@ -22,7 +22,7 @@
 #include <rtdk.h>
 #include <syslog.h>
 
-#include "../c/headers/dincludes.h"
+#include "./../../lib/headers/dincludes.h"
 
 #endif	/* INCLUDES_H */
 
