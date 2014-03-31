@@ -22,6 +22,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 
 #include "uart.h"
 #include "timer.h"
@@ -215,6 +216,8 @@ char system;
 char battery_level;
 int distance;
 
+	wdt_enable(WDTO_4S);
+	
 	stdout = &mystdinout;
 	stdin = &mystdinout;
 	
@@ -234,7 +237,7 @@ int distance;
 	
 	system = STATE_IDLE;
 	
-	set_sleep_mode(SLEEP_MODE_IDLE);
+	//set_sleep_mode(SLEEP_MODE_IDLE);
 	sei();
 	
 	//MOTORWalk(MOTOR_RIGHT, 400, MOTOR_FORWARD);
@@ -249,8 +252,14 @@ int distance;
 	
 	for (;;)
 	{
-		sleep_mode();
-
+		//sleep_mode();
+		
+			wdt_reset();
+	
+		
+		/* Reset du watchdog hardware */
+		sei();
+		
 		/* Battery verification */
 		battery_level = DUMBERVbatLevel();
 		if (battery_level==BAT_EMPTY)
