@@ -1,0 +1,1 @@
+This educational project aims to develop a real-time platform for robot control.
